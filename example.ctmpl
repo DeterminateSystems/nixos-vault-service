@@ -1,0 +1,3 @@
+{{ with secret "sys/tools/random/1" "format=base64" }}
+cloudamqp = {{ .Data.random_bytes }}
+{{ end }}

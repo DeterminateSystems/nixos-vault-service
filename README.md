@@ -72,6 +72,11 @@ This temporary filessytem will be shared with the target service via the `JoinsN
             # What to do if this *specific* file changes content.
             # Defaults to the secretFiles.defaultChangeAction, and any of those values are valid here too.
             changeAction = "reload";
+
+            # Either use an external file as the template:
+            templateFile = ./example.ctmpl;
+
+            # or an embedded string template:
             template = ''
                 {{ with secret "pki/issue/my-domain-dot-com" "common_name=foo.example.com" }}
                 {{ .Data.certificate }}{{ end }}
@@ -110,6 +115,28 @@ Once the connection to the database is open, will it remain open even if the cre
 Should hydra-init be marked as "reload" or a "none" changeAction?
 If hydra-init is terminated in the middle of a migration no _harm_ is done exactly, however the migration will be rolled back and therefore never complete.
 
+
+### Secret environment variables with an external template file
+
+With a file named `hydra-dbi-env.ctmpl`:
+
+```ctmpl
+{{ with secret "postgresql/creds/hydra" }}
+HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
+{{ end }}
+```
+
+```nix
+{
+    detsys.systemd.service.prometheus.vaultAgent = {
+        enable = true;
+
+        environment.templateFiles."dbi".file = ./hydra-dbi-env.ctmpl;
+    };
+}
+```
+
+
 ### Basic Auth for Nginx
 
 ```nix
@@ -141,6 +168,27 @@ If hydra-init is terminated in the middle of a migration no _harm_ is done exact
             files."vault.token".template = ''
                 {{with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
             '';
+        };
+    };
+}
+```
+
+### Secret files with an external template file
+
+With a file named `vault-token.ctmpl`:
+
+```ctmpl
+{{with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
+```
+
+```nix
+{
+    detsys.systemd.service.prometheus.vaultAgent = {
+        enable = true;
+
+        secretFiles = {
+            defaultChangeAction = "none";
+            files."vault.token".templateFile = ./vault-token.ctmpl;
         };
     };
 }

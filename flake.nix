@@ -29,11 +29,12 @@
         ({ pkgs, ... }:
           pkgs.mkShell {
             buildInputs = with pkgs; [
-              vault
               (terraform_1.withPlugins (tf: [
                 tf.local
                 tf.vault
               ]))
+              foreman
+              vault
             ];
           }
         );

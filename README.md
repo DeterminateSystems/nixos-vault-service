@@ -120,7 +120,7 @@ If hydra-init is terminated in the middle of a migration no _harm_ is done exact
 
 With a file named `hydra-dbi-env.ctmpl`:
 
-```ctmpl
+```golang
 {{ with secret "postgresql/creds/hydra" }}
 HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
 {{ end }}
@@ -177,8 +177,8 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 With a file named `vault-token.ctmpl`:
 
-```ctmpl
-{{with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
+```golang
+{{ with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
 ```
 
 ```nix

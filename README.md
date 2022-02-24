@@ -193,3 +193,19 @@ With a file named `vault-token.ctmpl`:
     };
 }
 ```
+
+---
+
+# Running tests
+
+Validate the module's definition passes checks.
+
+```
+nix-instantiate --eval --strict --json ./eval-tests.nix
+```
+
+Or interactively on each change:
+
+```
+git ls-files | entr -s 'nix-instantiate --eval --strict --json ./module/definition.tests.nix | jq .'
+```

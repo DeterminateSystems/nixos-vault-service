@@ -34,6 +34,7 @@
                 tf.vault
               ]))
               foreman
+              jq
               vault
             ];
           }

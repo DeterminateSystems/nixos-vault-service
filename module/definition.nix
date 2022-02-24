@@ -2,7 +2,6 @@
 let
   inherit (lib) mkOption mkEnableOption types;
 
-
   perServiceModule = { name, config, ... }: {
     options = {
       vaultAgent = mkOption {

@@ -106,4 +106,6 @@ in
   options.detsys.systemd.service = mkOption {
     type = types.attrsOf (types.submodule perServiceModule);
   };
+
+  config.assertions = [ ];
 }

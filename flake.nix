@@ -41,7 +41,8 @@
         );
 
       checks.definition = import ./module/definition.tests.nix {
-        lib = nixpkgs.lib;
+        inherit (nixpkgs) lib;
+        path = "${nixpkgs}";
       };
     };
 }

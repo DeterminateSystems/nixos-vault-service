@@ -1,7 +1,8 @@
-{ lib, ... }:
+{ path, lib, ... }:
 let
   evalCfg = config: (lib.evalModules {
     modules = [
+      "${path}/nixos/modules/misc/assertions.nix"
       ./definition.nix
       config
     ];

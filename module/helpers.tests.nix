@@ -182,14 +182,14 @@ with
 
   secretFileTemplate = expectRenderedConfig
     {
-      secretFiles.files."example".templateFile = ./helpers.test.nix;
+      secretFiles.files."example".templateFile = ./helpers.tests.nix;
     }
     {
       template = [
         {
           command = "systemctl restart 'example.service'";
           destination = "./files/example";
-          source = ./helpers.test.nix;
+          source = ./helpers.tests.nix;
         }
       ];
     };

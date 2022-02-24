@@ -125,7 +125,9 @@ suite {
 
   secretNoTemplate = expectAssertsWarns
     {
-      assertions = [ "missing secret file definition" ];
+      assertions = [
+        "detsys.systemd.service.secret-template.vaultAgent.secretFiles.example: One of the 'templateFile' and 'template' options must be specified."
+      ];
     }
     {
       detsys.systemd.service.secret-template.vaultAgent = {
@@ -133,6 +135,25 @@ suite {
         secretFiles = {
           defaultChangeAction = "reload";
           files."example" = { };
+        };
+      };
+    };
+
+  secretMutuallyExclusiveTemplates = expectAssertsWarns
+    {
+      assertions = [
+        "detsys.systemd.service.secret-template.vaultAgent.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
+      ];
+    }
+    {
+      detsys.systemd.service.secret-template.vaultAgent = {
+        enable = true;
+        secretFiles = {
+          defaultChangeAction = "reload";
+          files."example" = {
+            template = "hi";
+            templateFile = ./example.ctmpl;
+          };
         };
       };
     };

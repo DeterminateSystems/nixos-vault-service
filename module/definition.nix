@@ -1,4 +1,27 @@
-{ lib, ... }:
+{ lib, config, ... }:
+
+let
+  mkLimitedMerge = attrs:
+    let
+      pluckFunc = attr: values: lib.mkMerge
+        (builtins.map
+          (v:
+            lib.mkIf
+              (lib.hasAttrByPath attr v)
+              (lib.getAttrFromPath attr v)
+          )
+          values
+        );
+
+      pluckFuncs = attrs: values:
+        lib.mkMerge (builtins.map
+          (attr: lib.setAttrByPath attr (pluckFunc attr values))
+          attrs);
+
+    in
+    values:
+    pluckFuncs attrs values;
+in
 let
   inherit (lib) mkOption mkEnableOption types;
 
@@ -107,5 +130,22 @@ in
     type = types.attrsOf (types.submodule perServiceModule);
   };
 
-  config.assertions = [ ];
+  config = mkLimitedMerge [ [ "assertions" ] ]
+    (lib.mapAttrsToList
+      (serviceName: serviceConfig: {
+        assertions = lib.flatten (lib.mapAttrsToList
+          (secretFileName: secretFileConfig: [
+            {
+              assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
+              message = "detsys.systemd.service.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
+            }
+            {
+              assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
+              message = "detsys.systemd.service.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
+            }
+          ])
+          serviceConfig.vaultAgent.secretFiles.files);
+      })
+      config.detsys.systemd.service
+    );
 }

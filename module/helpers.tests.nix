@@ -25,14 +25,14 @@ with
       ) // { originalValue = val; };
   in
   {
-    expectRenderedConfig = expect: cfg:
+    expectRenderedConfig = cfg: expect:
       let
-        evaluatedCfg = evalCfg { detsys.systemd.service.nothing-set.vaultAgent = cfg; };
+        evaluatedCfg = evalCfg { detsys.systemd.service.example.vaultAgent = cfg; };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig result.value.detsys.systemd.service.example.vaultAgent);
+        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.service.example.vaultAgent);
       in
       if !result.success
       then
@@ -47,5 +47,31 @@ with
   }
 );
 {
-  nothingSet = expectRenderedConfig { } { };
+  nothingSet = expectRenderedConfig
+    { }
+    {
+      template = [ ];
+    };
+
+  environmentOnly = expectRenderedConfig
+    {
+      environment.template = ''
+        {{ with secret "postgresql/creds/hydra" }}
+        HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
+        {{ end }}
+      '';
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment.ctmpl";
+          contents = ''
+            {{ with secret "postgresql/creds/hydra" }}
+            HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
+            {{ end }}
+          '';
+        }
+      ];
+    };
 }

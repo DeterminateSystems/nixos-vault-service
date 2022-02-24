@@ -21,5 +21,13 @@
     values:
     pluckFuncs attrs values;
 
-  renderAgentConfig = cfg: { };
+  renderAgentConfig = targetService: cfg:
+    {
+      template = [ ] ++
+        (lib.optional (cfg.environment.template != null) {
+          command = "systemctl ${cfg.environment.changeAction} ${lib.escapeShellArg "${targetService}.service"}";
+          destination = "./environment.ctmpl";
+          contents = cfg.environment.template;
+        });
+    };
 }

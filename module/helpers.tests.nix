@@ -27,7 +27,7 @@ with
   {
     expectRenderedConfig = expect: cfg:
       let
-        evaluatedCfg = evalCfg cfg;
+        evaluatedCfg = evalCfg { detsys.systemd.service.nothing-set.vaultAgent = cfg; };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
@@ -47,7 +47,5 @@ with
   }
 );
 {
-  nothingSet = expectRenderedConfig { } {
-    detsys.systemd.service.nothing-set.vaultAgent = { };
-  };
+  nothingSet = expectRenderedConfig { } { };
 }

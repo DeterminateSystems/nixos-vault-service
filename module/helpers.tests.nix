@@ -65,7 +65,7 @@ with
       template = [
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment.ctmpl";
+          destination = "./environment.EnvFile";
           contents = ''
             {{ with secret "postgresql/creds/hydra" }}
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
@@ -83,7 +83,7 @@ with
       template = [
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.ctmpl";
+          destination = "./environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -100,7 +100,7 @@ with
       template = [
         {
           command = "systemctl stop 'example.service'";
-          destination = "./environment/example-a.ctmpl";
+          destination = "./environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -116,7 +116,7 @@ with
     {
       template = [
         {
-          destination = "./environment/example-a.ctmpl";
+          destination = "./environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -133,12 +133,12 @@ with
       template = [
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.ctmpl";
+          destination = "./environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment/example-b.ctmpl";
+          destination = "./environment/example-b.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -155,12 +155,12 @@ with
       template = [
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment.ctmpl";
+          destination = "./environment.EnvFile";
           contents = "FOO=BAR";
         }
         {
           command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.ctmpl";
+          destination = "./environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];

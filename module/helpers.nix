@@ -37,7 +37,7 @@
         ++ (lib.optional (cfg.environment.template != null)
         (
           (mkCommandAttrset cfg.environment.changeAction) // {
-            destination = "./environment.ctmpl";
+            destination = "./environment.EnvFile";
             contents = cfg.environment.template;
           }
         ))
@@ -45,7 +45,7 @@
         (name: { file }:
           (
             (mkCommandAttrset cfg.environment.changeAction) // {
-              destination = "./environment/${name}.ctmpl";
+              destination = "./environment/${name}.EnvFile";
               source = file;
             }
           ))

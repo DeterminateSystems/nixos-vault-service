@@ -44,5 +44,10 @@
         inherit (nixpkgs) lib;
         path = "${nixpkgs}";
       };
+
+      checks.helpers = import ./module/helpers.tests.nix {
+        inherit (nixpkgs) lib;
+        path = "${nixpkgs}";
+      };
     };
 }

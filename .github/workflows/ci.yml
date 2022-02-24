@@ -63,3 +63,5 @@ jobs:
         uses: cachix/install-nix-action@v13
       - name: Evaluation cases of the module's definition
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
+      - name: Evaluation cases of the helpers
+        run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers

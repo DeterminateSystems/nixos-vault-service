@@ -20,4 +20,6 @@
     in
     values:
     pluckFuncs attrs values;
+
+  renderAgentConfig = cfg: { };
 }

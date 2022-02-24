@@ -1,29 +1,7 @@
 { lib, config, ... }:
-
-let
-  mkLimitedMerge = attrs:
-    let
-      pluckFunc = attr: values: lib.mkMerge
-        (builtins.map
-          (v:
-            lib.mkIf
-              (lib.hasAttrByPath attr v)
-              (lib.getAttrFromPath attr v)
-          )
-          values
-        );
-
-      pluckFuncs = attrs: values:
-        lib.mkMerge (builtins.map
-          (attr: lib.setAttrByPath attr (pluckFunc attr values))
-          attrs);
-
-    in
-    values:
-    pluckFuncs attrs values;
-in
 let
   inherit (lib) mkOption mkEnableOption types;
+  inherit (import ./helpers.nix { inherit lib; }) mkScopedMerge;
 
   perServiceModule = { name, config, ... }: {
     options = {
@@ -130,7 +108,7 @@ in
     type = types.attrsOf (types.submodule perServiceModule);
   };
 
-  config = mkLimitedMerge [ [ "assertions" ] ]
+  config = mkScopedMerge [ [ "assertions" ] ]
     (lib.mapAttrsToList
       (serviceName: serviceConfig: {
         assertions = lib.flatten (lib.mapAttrsToList

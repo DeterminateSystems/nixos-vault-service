@@ -92,4 +92,14 @@ suite {
       };
     };
   };
+
+  secretNoTemplate = expectErrorCfg {
+    detsys.systemd.service.secret-template.vaultAgent = {
+      enable = true;
+      secretFiles = {
+        defaultChangeAction = "reload";
+        files."example" = { };
+      };
+    };
+  };
 }

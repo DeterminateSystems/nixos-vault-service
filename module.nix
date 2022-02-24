@@ -34,8 +34,8 @@ let
 
         template = mkOption {
           description = "A consult-template snippet which produces EnvironmentFile-compatible output.";
-          type = types.lines;
-          default = "";
+          type = types.nullOr types.lines;
+          default = null;
         };
       };
 
@@ -90,12 +90,14 @@ let
 
       templateFile = mkOption {
         description = "A consult-template file. Conflicts with template.";
-        type = types.path;
+        type = types.nullOr types.path;
+        default = null;
       };
 
       template = mkOption {
         description = "A consult-template snippet. Conflicts with templateFile.";
-        type = types.lines;
+        type = types.nullOr types.lines;
+        default = null;
       };
     };
   };

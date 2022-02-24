@@ -24,4 +24,32 @@ in
       '';
     };
   };
+
+  envTemplateFile = evalCfg {
+    detsys.systemd.service.env-template-file.vaultAgent = {
+      enable = true;
+      environment.templateFiles."example".file = ./example.ctmpl;
+    };
+  };
+
+  secretTemplateFile = evalCfg {
+    detsys.systemd.service.secret-template-file.vaultAgent = {
+      enable = true;
+      secretFiles = {
+        files."example".templateFile = ./example.ctmpl;
+      };
+    };
+  };
+
+  secretTemplate = evalCfg {
+    detsys.systemd.service.secret-template.vaultAgent = {
+      enable = true;
+      secretFiles = {
+        defaultChangeAction = "reload";
+        files."example".template = ''
+          ...
+        '';
+      };
+    };
+  };
 }

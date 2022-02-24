@@ -38,7 +38,7 @@ This temporary filessytem will be shared with the target service via the `JoinsN
         # cannot be reloaded.
         changeAction = "restart";
 
-        
+
         templateFiles = {
             # An EnvironmentFile is created for each section here.
             "file-section" = {
@@ -201,11 +201,11 @@ With a file named `vault-token.ctmpl`:
 Validate the module's definition passes checks.
 
 ```
-nix-instantiate --eval --strict --json ./eval-tests.nix
+nix-instantiate --strict --eval --json ./default.nix -A checks.definition
 ```
 
 Or interactively on each change:
 
 ```
-git ls-files | entr -s 'nix-instantiate --eval --strict --json ./module/definition.tests.nix | jq .'
+git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A checks.definition | jq .'
 ```

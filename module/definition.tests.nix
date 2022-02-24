@@ -1,6 +1,5 @@
+{ lib, ... }:
 let
-  lib = import <nixpkgs/lib>;
-
   evalCfg = config: (lib.evalModules {
     modules = [
       ./definition.nix

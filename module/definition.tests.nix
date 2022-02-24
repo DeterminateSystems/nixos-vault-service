@@ -12,7 +12,7 @@ let
   expectSuccess = expectedSuccess: val:
     (builtins.tryEval
       (builtins.deepSeq val val)
-    ) // { inherit expectedSuccess; };
+    ) // { inherit expectedSuccess; originalValue = val; };
 
   expectOkCfg = cfg: expectOk (evalCfg cfg);
   expectErrorCfg = cfg: expectError (evalCfg cfg);
@@ -20,12 +20,23 @@ let
   suite = { ... } @ tests:
     builtins.deepSeq
       (builtins.mapAttrs
-        (name: { success, expectedSuccess, value }:
-          if success == expectedSuccess
+        (name: { success, expectedSuccess, value, originalValue } @ args:
+          let
+            failureMessage = "test case '${name}': Evaluation was expected to ${if expectedSuccess then "succeed" else "fail"}, but it ${if success then "succeeded" else "failed"}.";
+
+            handleMismatchedExpectation = if success then handleUnexpectedSuccess else handleUnexpectedFailure;
+            handleUnexpectedSuccess = throw failureMessage;
+            handleUnexpectedFailure = builtins.trace
+              failureMessage
+              (builtins.deepSeq originalValue null);
+
+          in
+          if
+            success == expectedSuccess
           then
             null
           else
-            throw "test case '${name}': Evaluation was expected to ${if expectedSuccess then "succeed" else "fail"}, but it ${if success then "succeeded" else "failed"}."
+            handleMismatchedExpectation
         )
         tests)
       "ok";

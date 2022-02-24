@@ -22,12 +22,33 @@
     pluckFuncs attrs values;
 
   renderAgentConfig = targetService: cfg:
+    let
+      mkCommandAttrset = restartAction:
+        if restartAction == "none"
+        then
+          { }
+        else
+          {
+            command = "systemctl ${cfg.environment.changeAction} ${lib.escapeShellArg "${targetService}.service"}";
+          };
+    in
     {
-      template = [ ] ++
-        (lib.optional (cfg.environment.template != null) {
-          command = "systemctl ${cfg.environment.changeAction} ${lib.escapeShellArg "${targetService}.service"}";
-          destination = "./environment.ctmpl";
-          contents = cfg.environment.template;
-        });
+      template = [ ]
+        ++ (lib.optional (cfg.environment.template != null)
+        (
+          (mkCommandAttrset cfg.environment.changeAction) // {
+            destination = "./environment.ctmpl";
+            contents = cfg.environment.template;
+          }
+        ))
+        ++ (lib.mapAttrsToList
+        (name: { file }:
+          (
+            (mkCommandAttrset cfg.environment.changeAction) // {
+              destination = "./environment/${name}.ctmpl";
+              source = file;
+            }
+          ))
+        cfg.environment.templateFiles);
     };
 }

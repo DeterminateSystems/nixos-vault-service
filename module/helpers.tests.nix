@@ -53,7 +53,7 @@ with
       template = [ ];
     };
 
-  environmentOnly = expectRenderedConfig
+  environmentOnlyInline = expectRenderedConfig
     {
       environment.template = ''
         {{ with secret "postgresql/creds/hydra" }}
@@ -71,6 +71,97 @@ with
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
             {{ end }}
           '';
+        }
+      ];
+    };
+
+  environmentOneFile = expectRenderedConfig
+    {
+      environment.templateFiles."example-a".file = ./helpers.tests.nix;
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment/example-a.ctmpl";
+          source = ./helpers.tests.nix;
+        }
+      ];
+    };
+
+  environmentChangeStop = expectRenderedConfig
+    {
+      environment = {
+        changeAction = "stop";
+        templateFiles."example-a".file = ./helpers.tests.nix;
+      };
+    }
+    {
+      template = [
+        {
+          command = "systemctl stop 'example.service'";
+          destination = "./environment/example-a.ctmpl";
+          source = ./helpers.tests.nix;
+        }
+      ];
+    };
+
+  environmentChangeNone = expectRenderedConfig
+    {
+      environment = {
+        changeAction = "none";
+        templateFiles."example-a".file = ./helpers.tests.nix;
+      };
+    }
+    {
+      template = [
+        {
+          destination = "./environment/example-a.ctmpl";
+          source = ./helpers.tests.nix;
+        }
+      ];
+    };
+
+  environmentTwoFiles = expectRenderedConfig
+    {
+      environment.templateFiles = {
+        "example-a".file = ./helpers.tests.nix;
+        "example-b".file = ./helpers.tests.nix;
+      };
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment/example-a.ctmpl";
+          source = ./helpers.tests.nix;
+        }
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment/example-b.ctmpl";
+          source = ./helpers.tests.nix;
+        }
+      ];
+    };
+
+  environmentInlineAndFiles = expectRenderedConfig
+    {
+      environment = {
+        template = "FOO=BAR";
+        templateFiles."example-a".file = ./helpers.tests.nix;
+      };
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment.ctmpl";
+          contents = "FOO=BAR";
+        }
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./environment/example-a.ctmpl";
+          source = ./helpers.tests.nix;
         }
       ];
     };

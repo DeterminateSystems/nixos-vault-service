@@ -165,4 +165,32 @@ with
         }
       ];
     };
+
+  secretFileInline = expectRenderedConfig
+    {
+      secretFiles.files."example".template = "FOO=BAR";
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./files/example";
+          contents = "FOO=BAR";
+        }
+      ];
+    };
+
+  secretFileTemplate = expectRenderedConfig
+    {
+      secretFiles.files."example".templateFile = ./helpers.test.nix;
+    }
+    {
+      template = [
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./files/example";
+          source = ./helpers.test.nix;
+        }
+      ];
+    };
 }

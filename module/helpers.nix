@@ -49,6 +49,25 @@
               source = file;
             }
           ))
-        cfg.environment.templateFiles);
+        cfg.environment.templateFiles)
+        ++ (lib.mapAttrsToList
+        (name: { changeAction, templateFile, template }:
+          (
+            (mkCommandAttrset changeAction) // {
+              destination = "./files/${name}";
+            } //
+              (
+                if template != null
+                then {
+                  contents = template;
+                }
+                else if templateFile != null
+                then {
+                  source = templateFile;
+                }
+                else throw ""
+              )
+          ))
+        cfg.secretFiles.files);
     };
 }

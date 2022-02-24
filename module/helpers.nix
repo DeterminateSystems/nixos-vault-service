@@ -29,7 +29,7 @@
           { }
         else
           {
-            command = "systemctl ${cfg.environment.changeAction} ${lib.escapeShellArg "${targetService}.service"}";
+            command = "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
           };
     in
     {
@@ -53,7 +53,7 @@
         ++ (lib.mapAttrsToList
         (name: { changeAction, templateFile, template }:
           (
-            (mkCommandAttrset changeAction) // {
+            (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
               destination = "./files/${name}";
             } //
               (

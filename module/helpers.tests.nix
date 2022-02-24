@@ -193,4 +193,47 @@ with
         }
       ];
     };
+
+  secretFileChangedDefaultChangeAction = expectRenderedConfig
+    {
+      secretFiles = {
+        defaultChangeAction = "reload";
+        files."example".template = "FOO=BAR";
+      };
+    }
+    {
+      template = [
+        {
+          command = "systemctl reload 'example.service'";
+          destination = "./files/example";
+          contents = "FOO=BAR";
+        }
+      ];
+    };
+
+  secretFileChangedDefaultChangeActionOverride = expectRenderedConfig
+    {
+      secretFiles = {
+        defaultChangeAction = "reload";
+        files."example-a".template = "FOO=BAR";
+        files."example-b" = {
+          changeAction = "restart";
+          template = "FOO=BAR";
+        };
+      };
+    }
+    {
+      template = [
+        {
+          command = "systemctl reload 'example.service'";
+          destination = "./files/example-a";
+          contents = "FOO=BAR";
+        }
+        {
+          command = "systemctl restart 'example.service'";
+          destination = "./files/example-b";
+          contents = "FOO=BAR";
+        }
+      ];
+    };
 }

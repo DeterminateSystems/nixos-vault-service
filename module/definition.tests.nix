@@ -1,53 +1,82 @@
 { path, lib, ... }:
 let
-  evalCfg = config: (lib.evalModules {
-    modules = [
-      "${path}/nixos/modules/misc/assertions.nix"
-      ./definition.nix
-      config
-    ];
-  }).config;
-
-  expectError = val: expectSuccess false val; # point-free is for the Mets
-  expectOk = val: expectSuccess true val;
-  expectSuccess = expectedSuccess: val:
-    (builtins.tryEval
-      (builtins.deepSeq val val)
-    ) // { inherit expectedSuccess; originalValue = val; };
-
-  expectOkCfg = cfg: expectOk (evalCfg cfg);
-  expectErrorCfg = cfg: expectError (evalCfg cfg);
-
   suite = { ... } @ tests:
-    builtins.deepSeq
-      (builtins.mapAttrs
-        (name: { success, expectedSuccess, value, originalValue } @ args:
-          let
-            failureMessage = "test case '${name}': Evaluation was expected to ${if expectedSuccess then "succeed" else "fail"}, but it ${if success then "succeeded" else "failed"}.";
-
-            handleMismatchedExpectation = if success then handleUnexpectedSuccess else handleUnexpectedFailure;
-            handleUnexpectedSuccess = throw failureMessage;
-            handleUnexpectedFailure = builtins.trace
-              failureMessage
-              (builtins.deepSeq originalValue null);
-
-          in
-          if
-            success == expectedSuccess
-          then
-            null
-          else
-            handleMismatchedExpectation
-        )
-        tests)
-      "ok";
+    (builtins.mapAttrs
+      (name: value:
+        (builtins.trace "test case '${name}':" value))
+      tests);
 in
+with
+(
+  let
+    evalCfg = config:
+      (lib.evalModules {
+        modules = [
+          "${path}/nixos/modules/misc/assertions.nix"
+          ./definition.nix
+          config
+        ];
+      }).config;
+
+    safeEval = val:
+      (builtins.tryEval
+        (builtins.deepSeq val val)
+      ) // { originalValue = val; };
+  in
+  {
+    expectOk = cfg:
+      let
+        evaluatedCfg = evalCfg cfg;
+        result = safeEval evaluatedCfg;
+
+        filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
+      in
+      if !result.success
+      then
+        evaluatedCfg
+      else if (filteredAsserts != [ ] || result.value.warnings != [ ])
+      then
+        throw "Unexpected assertions or warnings. Assertions: ${builtins.toJSON filteredAsserts}. Warnings: ${builtins.toJSON result.value.warnings}"
+      else
+        "ok";
+
+    expectEvalError = cfg:
+      let
+        result = safeEval (evalCfg cfg);
+      in
+      if result.success
+      then throw "Unexpectedly evaluated successfully."
+      else "ok";
+
+    expectAssertsWarns = { assertions ? [ ], warnings ? [ ] }: cfg:
+      let
+        evaluatedCfg = evalCfg cfg;
+        result = safeEval evaluatedCfg;
+
+        expect = {
+          inherit assertions warnings;
+        };
+        actual = {
+          assertions = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
+          inherit (result.value) warnings;
+        };
+      in
+      if !result.success
+      then
+        evaluatedCfg
+      else if (expect != actual)
+      then
+        throw "Unexpected assertions or warnings. Expected: ${builtins.toJSON expect} Got: ${builtins.toJSON actual}"
+      else
+        "ok";
+  }
+);
 suite {
-  nothingSet = expectOkCfg {
+  nothingSet = expectOk {
     detsys.systemd.service.nothing-set.vaultAgent = { };
   };
 
-  envTemplate = expectOkCfg {
+  envTemplate = expectOk {
     detsys.systemd.service.env-template.vaultAgent = {
       enable = true;
 
@@ -59,21 +88,21 @@ suite {
     };
   };
 
-  envTemplateFile = expectOkCfg {
+  envTemplateFile = expectOk {
     detsys.systemd.service.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example".file = ./example.ctmpl;
     };
   };
 
-  envTemplateFileNone = expectErrorCfg {
+  envTemplateFileNone = expectEvalError {
     detsys.systemd.service.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example" = { };
     };
   };
 
-  secretTemplateFile = expectOkCfg {
+  secretTemplateFile = expectOk {
     detsys.systemd.service.secret-template-file.vaultAgent = {
       enable = true;
       secretFiles = {
@@ -82,7 +111,7 @@ suite {
     };
   };
 
-  secretTemplate = expectOkCfg {
+  secretTemplate = expectOk {
     detsys.systemd.service.secret-template.vaultAgent = {
       enable = true;
       secretFiles = {
@@ -94,13 +123,17 @@ suite {
     };
   };
 
-  secretNoTemplate = expectErrorCfg {
-    detsys.systemd.service.secret-template.vaultAgent = {
-      enable = true;
-      secretFiles = {
-        defaultChangeAction = "reload";
-        files."example" = { };
+  secretNoTemplate = expectAssertsWarns
+    {
+      assertions = [ "missing secret file definition" ];
+    }
+    {
+      detsys.systemd.service.secret-template.vaultAgent = {
+        enable = true;
+        secretFiles = {
+          defaultChangeAction = "reload";
+          files."example" = { };
+        };
       };
     };
-  };
 }

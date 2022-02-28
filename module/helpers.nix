@@ -49,33 +49,39 @@
               }
             ))
           cfg.environment.templateFiles);
+
+      secretFileTemplates = lib.mapAttrsToList
+        (name: { changeAction, templateFile, template }:
+          (
+            (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
+              destination = "./files/${name}";
+            } //
+            (
+              if template != null
+              then {
+                contents = template;
+              }
+              else if templateFile != null
+              then {
+                source = templateFile;
+              }
+              else throw ""
+            )
+          ))
+        cfg.secretFiles.files;
     in
     {
       environmentFiles = builtins.map
         (tpl: tpl.destination)
         environmentFileTemplates;
 
+      secretFiles = builtins.map
+        (tpl: tpl.destination)
+        secretFileTemplates;
+
       agentConfig = (cfg.extraConfig or { }) // {
         template = environmentFileTemplates
-          ++ (lib.mapAttrsToList
-          (name: { changeAction, templateFile, template }:
-            (
-              (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
-                destination = "./files/${name}";
-              } //
-                (
-                  if template != null
-                  then {
-                    contents = template;
-                  }
-                  else if templateFile != null
-                  then {
-                    source = templateFile;
-                  }
-                  else throw ""
-                )
-            ))
-          cfg.secretFiles.files);
+          ++ secretFileTemplates;
       };
     };
 }

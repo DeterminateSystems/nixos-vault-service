@@ -31,25 +31,27 @@
           {
             command = "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
           };
-    in
-    cfg.extraConfig // {
-      template = [ ]
-      ++ (lib.optional (cfg.environment.template != null)
-        (
-          (mkCommandAttrset cfg.environment.changeAction) // {
-            destination = "./environment.EnvFile";
-            contents = cfg.environment.template;
-          }
-        ))
-      ++ (lib.mapAttrsToList
-        (name: { file }:
+
+      environmentFileTemplates =
+        (lib.optional (cfg.environment.template != null)
           (
             (mkCommandAttrset cfg.environment.changeAction) // {
-              destination = "./environment/${name}.EnvFile";
-              source = file;
+              destination = "./environment.EnvFile";
+              contents = cfg.environment.template;
             }
           ))
-        cfg.environment.templateFiles)
+        ++ (lib.mapAttrsToList
+          (name: { file }:
+            (
+              (mkCommandAttrset cfg.environment.changeAction) // {
+                destination = "./environment/${name}.EnvFile";
+                source = file;
+              }
+            ))
+          cfg.environment.templateFiles);
+    in
+    (cfg.extraConfig or { }) // {
+      template = environmentFileTemplates
       ++ (lib.mapAttrsToList
         (name: { changeAction, templateFile, template }:
           (

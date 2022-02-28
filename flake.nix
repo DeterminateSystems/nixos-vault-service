@@ -49,5 +49,10 @@
         inherit (nixpkgs) lib;
         path = "${nixpkgs}";
       };
+
+      checks.implementation = import ./module/implementation.tests.nix {
+        inherit nixpkgs;
+        inherit (nixpkgs) lib;
+      };
     };
 }

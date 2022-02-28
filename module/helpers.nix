@@ -32,16 +32,16 @@
             command = "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
           };
     in
-    {
+    cfg.extraConfig // {
       template = [ ]
-        ++ (lib.optional (cfg.environment.template != null)
+      ++ (lib.optional (cfg.environment.template != null)
         (
           (mkCommandAttrset cfg.environment.changeAction) // {
             destination = "./environment.EnvFile";
             contents = cfg.environment.template;
           }
         ))
-        ++ (lib.mapAttrsToList
+      ++ (lib.mapAttrsToList
         (name: { file }:
           (
             (mkCommandAttrset cfg.environment.changeAction) // {
@@ -50,23 +50,23 @@
             }
           ))
         cfg.environment.templateFiles)
-        ++ (lib.mapAttrsToList
+      ++ (lib.mapAttrsToList
         (name: { changeAction, templateFile, template }:
           (
             (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
               destination = "./files/${name}";
             } //
-              (
-                if template != null
-                then {
-                  contents = template;
-                }
-                else if templateFile != null
-                then {
-                  source = templateFile;
-                }
-                else throw ""
-              )
+            (
+              if template != null
+              then {
+                contents = template;
+              }
+              else if templateFile != null
+              then {
+                source = templateFile;
+              }
+              else throw ""
+            )
           ))
         cfg.secretFiles.files);
     };

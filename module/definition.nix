@@ -15,6 +15,12 @@ let
     options = {
       enable = mkEnableOption "vaultAgent";
 
+      extraConfig = mkOption {
+        description = "Extra assorted config bits. The only place to specify vault and auto_auth config. To be replaced.";
+        type = types.attrsOf types.unspecified;
+        default = { };
+      };
+
       # !!! should this be a submodule?
       environment = {
         changeAction = mkOption {

@@ -1,6 +1,5 @@
-{ path, lib, ... }:
+{ nixpkgs, lib, ... }:
 let
-  helpers = import ./helpers.nix { inherit lib; };
   suite = { ... } @ tests:
     (builtins.mapAttrs
       (name: value:
@@ -11,13 +10,15 @@ with
 (
   let
     evalCfg = config:
-      (lib.evalModules {
-        modules = [
-          "${path}/nixos/modules/misc/assertions.nix"
-          ./definition.nix
-          config
-        ];
-      }).config;
+      (lib.nixosSystem
+        {
+          system = "x86_64-linux";
+          modules = [
+            ./implementation.nix
+            config
+          ];
+        }
+      ).config;
 
     safeEval = val:
       (builtins.tryEval
@@ -25,35 +26,35 @@ with
       ) // { originalValue = val; };
   in
   {
-    expectRenderedConfig = cfg: expect:
+    expectRenderedService = cfg: expect:
       let
         evaluatedCfg = evalCfg { detsys.systemd.service.example.vaultAgent = cfg; };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.service.example.vaultAgent);
+        actual = result.value.systemd.services.example;
       in
       if !result.success
       then
-        evaluatedCfg
+        evaluatedCfg.systemd.services.example
       else if (filteredAsserts != [ ] || result.value.warnings != [ ])
       then
         throw "Unexpected assertions or warnings. Assertions: ${builtins.toJSON filteredAsserts}. Warnings: ${builtins.toJSON result.value.warnings}"
       else if actual != expect
       then
         throw "Mismatched configuration. Expected: ${builtins.toJSON expect} Got: ${builtins.toJSON actual}"
-      else "ok";
+      else builtins.trace (builtins.toJSON actual) "ok";
   }
 );
 {
-  nothingSet = expectRenderedConfig
+  nothingSet = expectRenderedService
     { }
     {
       template = [ ];
     };
 
-  environmentOnlyInline = expectRenderedConfig
+  environmentOnlyInline = expectRenderedService
     {
       environment.template = ''
         {{ with secret "postgresql/creds/hydra" }}
@@ -75,7 +76,7 @@ with
       ];
     };
 
-  environmentOneFile = expectRenderedConfig
+  environmentOneFile = expectRenderedService
     {
       environment.templateFiles."example-a".file = ./helpers.tests.nix;
     }
@@ -89,7 +90,7 @@ with
       ];
     };
 
-  environmentChangeStop = expectRenderedConfig
+  environmentChangeStop = expectRenderedService
     {
       environment = {
         changeAction = "stop";
@@ -106,7 +107,7 @@ with
       ];
     };
 
-  environmentChangeNone = expectRenderedConfig
+  environmentChangeNone = expectRenderedService
     {
       environment = {
         changeAction = "none";
@@ -122,7 +123,7 @@ with
       ];
     };
 
-  environmentTwoFiles = expectRenderedConfig
+  environmentTwoFiles = expectRenderedService
     {
       environment.templateFiles = {
         "example-a".file = ./helpers.tests.nix;
@@ -144,7 +145,7 @@ with
       ];
     };
 
-  environmentInlineAndFiles = expectRenderedConfig
+  environmentInlineAndFiles = expectRenderedService
     {
       environment = {
         template = "FOO=BAR";
@@ -166,7 +167,7 @@ with
       ];
     };
 
-  secretFileInline = expectRenderedConfig
+  secretFileInline = expectRenderedService
     {
       secretFiles.files."example".template = "FOO=BAR";
     }
@@ -180,7 +181,7 @@ with
       ];
     };
 
-  secretFileTemplate = expectRenderedConfig
+  secretFileTemplate = expectRenderedService
     {
       secretFiles.files."example".templateFile = ./helpers.tests.nix;
     }
@@ -194,7 +195,7 @@ with
       ];
     };
 
-  secretFileChangedDefaultChangeAction = expectRenderedConfig
+  secretFileChangedDefaultChangeAction = expectRenderedService
     {
       secretFiles = {
         defaultChangeAction = "reload";
@@ -211,7 +212,7 @@ with
       ];
     };
 
-  secretFileChangedDefaultChangeActionOverride = expectRenderedConfig
+  secretFileChangedDefaultChangeActionOverride = expectRenderedService
     {
       secretFiles = {
         defaultChangeAction = "reload";
@@ -237,7 +238,7 @@ with
       ];
     };
 
-  extraConfig = expectRenderedConfig
+  extraConfig = expectRenderedService
     {
       extraConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
@@ -268,23 +269,6 @@ with
       };
     }
     {
-      vault = [{ address = "http://127.0.0.1:8200"; }];
-      auto_auth = [
-        {
-          method = [
-            {
-              config = [
-                {
-                  remove_secret_id_file_after_reading = false;
-                  role_id_file_path = "role_id";
-                  secret_id_file_path = "secret_id";
-                }
-              ];
-              type = "approle";
-            }
-          ];
-        }
-      ];
       template = [
         {
           command = "systemctl reload 'example.service'";

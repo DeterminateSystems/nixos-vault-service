@@ -209,3 +209,9 @@ Or interactively on each change:
 ```
 git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A checks.definition | jq .'
 ```
+
+----
+
+# Bugs
+
+* the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.

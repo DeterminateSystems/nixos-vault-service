@@ -110,7 +110,7 @@ let
 
 in
 {
-  options.detsys.systemd.service = mkOption {
+  options.detsys.systemd.services = mkOption {
     type = types.attrsOf (types.submodule perServiceModule);
   };
 
@@ -121,15 +121,15 @@ in
           (secretFileName: secretFileConfig: [
             {
               assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
-              message = "detsys.systemd.service.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
+              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
             }
             {
               assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
-              message = "detsys.systemd.service.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
+              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
             }
           ])
           serviceConfig.vaultAgent.secretFiles.files);
       })
-      config.detsys.systemd.service
+      config.detsys.systemd.services
     );
 }

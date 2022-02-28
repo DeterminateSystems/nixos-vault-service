@@ -27,12 +27,12 @@ with
   {
     expectRenderedConfig = cfg: expect:
       let
-        evaluatedCfg = evalCfg { detsys.systemd.service.example.vaultAgent = cfg; };
+        evaluatedCfg = evalCfg { detsys.systemd.services.example.vaultAgent = cfg; };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.service.example.vaultAgent);
+        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.services.example.vaultAgent);
       in
       if !result.success
       then

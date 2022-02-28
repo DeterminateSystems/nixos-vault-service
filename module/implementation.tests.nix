@@ -28,7 +28,7 @@ with
   {
     expectRenderedService = cfg: expect:
       let
-        evaluatedCfg = evalCfg { detsys.systemd.service.example.vaultAgent = cfg; };
+        evaluatedCfg = evalCfg { detsys.systemd.services.example.vaultAgent = cfg; };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);

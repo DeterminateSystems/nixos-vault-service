@@ -73,11 +73,11 @@ with
 );
 suite {
   nothingSet = expectOk {
-    detsys.systemd.service.nothing-set.vaultAgent = { };
+    detsys.systemd.services.nothing-set.vaultAgent = { };
   };
 
   envTemplate = expectOk {
-    detsys.systemd.service.env-template.vaultAgent = {
+    detsys.systemd.services.env-template.vaultAgent = {
       enable = true;
 
       environment.template = ''
@@ -89,21 +89,21 @@ suite {
   };
 
   envTemplateFile = expectOk {
-    detsys.systemd.service.env-template-file.vaultAgent = {
+    detsys.systemd.services.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example".file = ./example.ctmpl;
     };
   };
 
   envTemplateFileNone = expectEvalError {
-    detsys.systemd.service.env-template-file.vaultAgent = {
+    detsys.systemd.services.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example" = { };
     };
   };
 
   secretTemplateFile = expectOk {
-    detsys.systemd.service.secret-template-file.vaultAgent = {
+    detsys.systemd.services.secret-template-file.vaultAgent = {
       enable = true;
       secretFiles = {
         files."example".templateFile = ./example.ctmpl;
@@ -112,7 +112,7 @@ suite {
   };
 
   secretTemplate = expectOk {
-    detsys.systemd.service.secret-template.vaultAgent = {
+    detsys.systemd.services.secret-template.vaultAgent = {
       enable = true;
       secretFiles = {
         defaultChangeAction = "reload";
@@ -126,11 +126,11 @@ suite {
   secretNoTemplate = expectAssertsWarns
     {
       assertions = [
-        "detsys.systemd.service.secret-template.vaultAgent.secretFiles.example: One of the 'templateFile' and 'template' options must be specified."
+        "detsys.systemd.services.secret-template.vaultAgent.secretFiles.example: One of the 'templateFile' and 'template' options must be specified."
       ];
     }
     {
-      detsys.systemd.service.secret-template.vaultAgent = {
+      detsys.systemd.services.secret-template.vaultAgent = {
         enable = true;
         secretFiles = {
           defaultChangeAction = "reload";
@@ -142,11 +142,11 @@ suite {
   secretMutuallyExclusiveTemplates = expectAssertsWarns
     {
       assertions = [
-        "detsys.systemd.service.secret-template.vaultAgent.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
+        "detsys.systemd.services.secret-template.vaultAgent.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
       ];
     }
     {
-      detsys.systemd.service.secret-template.vaultAgent = {
+      detsys.systemd.services.secret-template.vaultAgent = {
         enable = true;
         secretFiles = {
           defaultChangeAction = "reload";

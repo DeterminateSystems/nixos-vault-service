@@ -112,6 +112,7 @@ in
 {
   options.detsys.systemd.services = mkOption {
     type = types.attrsOf (types.submodule perServiceModule);
+    default = { };
   };
 
   config = mkScopedMerge [ [ "assertions" ] ]

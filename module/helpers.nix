@@ -50,26 +50,32 @@
             ))
           cfg.environment.templateFiles);
     in
-    (cfg.extraConfig or { }) // {
-      template = environmentFileTemplates
-      ++ (lib.mapAttrsToList
-        (name: { changeAction, templateFile, template }:
-          (
-            (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
-              destination = "./files/${name}";
-            } //
+    {
+      environmentFiles = builtins.map
+        (tpl: tpl.destination)
+        environmentFileTemplates;
+
+      agentConfig = (cfg.extraConfig or { }) // {
+        template = environmentFileTemplates
+          ++ (lib.mapAttrsToList
+          (name: { changeAction, templateFile, template }:
             (
-              if template != null
-              then {
-                contents = template;
-              }
-              else if templateFile != null
-              then {
-                source = templateFile;
-              }
-              else throw ""
-            )
-          ))
-        cfg.secretFiles.files);
+              (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
+                destination = "./files/${name}";
+              } //
+                (
+                  if template != null
+                  then {
+                    contents = template;
+                  }
+                  else if templateFile != null
+                  then {
+                    source = templateFile;
+                  }
+                  else throw ""
+                )
+            ))
+          cfg.secretFiles.files);
+      };
     };
 }

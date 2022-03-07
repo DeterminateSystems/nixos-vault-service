@@ -103,4 +103,94 @@ in
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep infinity"))
     '';
+
+  secretFile = mkTest
+    ({ pkgs, ... }: {
+      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
+
+      systemd.services.vault = {
+        wantedBy = [ "default.target" ];
+        path = [ pkgs.glibc ];
+        script = ''
+          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
+        '';
+      };
+
+      systemd.services.setup-vault = {
+        wantedBy = [ "default.target" ];
+        after = [ "vault.service" ];
+        path = [
+          (
+            (pkgs.terraform_1.withPlugins (tf: [
+              tf.local
+              tf.vault
+            ]))
+          )
+        ];
+
+        unitConfig.Type = "oneshot";
+
+        script = ''
+          set -eux
+
+          cd /
+          mkdir -p terraform
+          cd terraform
+
+          cp -r ${../terraform}/* ./
+          terraform init
+          terraform apply -auto-approve
+
+          ls /
+        '';
+      };
+
+      detsys.systemd.services.example.vaultAgent = {
+        extraConfig = {
+          vault = [{ address = "http://127.0.0.1:8200"; }];
+          auto_auth = [
+            {
+              method = [
+                {
+                  config = [
+                    {
+                      remove_secret_id_file_after_reading = false;
+                      role_id_file_path = "/role_id";
+                      secret_id_file_path = "/secret_id";
+                    }
+                  ];
+                  type = "approle";
+                }
+              ];
+            }
+          ];
+          template_config = [{
+            static_secret_render_interval = "5s";
+          }];
+        };
+
+        secretFiles.files."rand_bytes".template = ''
+          {{ with secret "sys/tools/random/1" "format=base64" }}
+          Have some random bytes! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+      systemd.services.example = {
+        script = ''
+          cat /run/keys/files/rand_bytes
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_job("setup-vault")
+      print(machine.succeed("sleep 5; journalctl -u setup-vault"))
+      machine.start_job("example")
+      machine.wait_for_job("detsys-vaultAgent-example")
+      print(machine.succeed("sleep 5; ls /run/keys"))
+      print(machine.succeed("sleep 1; ls /run/keys/files"))
+      print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes"))
+      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
+      print(machine.succeed("sleep infinity"))
+    '';
 }

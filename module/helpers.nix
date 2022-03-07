@@ -28,6 +28,7 @@
           restartAction = {
             restart = "try-restart";
             reload = "try-reload-or-restart";
+            stop = "stop";
           }."${requestedAction}";
         in
         if restartAction == "none"

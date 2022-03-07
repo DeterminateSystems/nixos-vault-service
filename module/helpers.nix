@@ -31,7 +31,7 @@
             stop = "stop";
           }."${requestedAction}";
         in
-        if restartAction == "none"
+        if requestedAction == "none"
         then
           { }
         else

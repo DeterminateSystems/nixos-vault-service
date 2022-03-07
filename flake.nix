@@ -36,6 +36,7 @@
               foreman
               jq
               vault
+              nixpkgs-fmt
             ];
           }
         );

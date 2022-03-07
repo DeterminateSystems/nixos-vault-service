@@ -171,13 +171,24 @@ in
 
         secretFiles.files."rand_bytes".template = ''
           {{ with secret "sys/tools/random/3" "format=base64" }}
-          Have THREE random bytes! {{ .Data.random_bytes }}
+          Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
           {{ end }}
         '';
+
+        secretFiles.files."rand_bytes-v2".templateFile =
+          let
+            file = pkgs.writeText "rand_bytes-v2.tpl" ''
+              {{ with secret "sys/tools/random/6" "format=base64" }}
+              Have SIX random bytes, but from a template file! {{ .Data.random_bytes }}
+              {{ end }}
+            '';
+          in
+          file;
       };
       systemd.services.example = {
         script = ''
           cat /run/keys/files/rand_bytes
+          cat /run/keys/files/rand_bytes-v2
           sleep infinity
         '';
       };
@@ -190,6 +201,7 @@ in
       print(machine.succeed("sleep 5; ls /run/keys"))
       print(machine.succeed("sleep 1; ls /run/keys/files"))
       print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes"))
+      print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes-v2"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep infinity"))
     '';

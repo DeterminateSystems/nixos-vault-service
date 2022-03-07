@@ -64,8 +64,8 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/EnvFile";
           contents = ''
             {{ with secret "postgresql/creds/hydra" }}
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
@@ -82,8 +82,8 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -100,7 +100,7 @@ with
       template = [
         {
           command = "systemctl stop 'example.service'";
-          destination = "./environment/example-a.EnvFile";
+          destination = "/run/keys/environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -116,7 +116,7 @@ with
     {
       template = [
         {
-          destination = "./environment/example-a.EnvFile";
+          destination = "/run/keys/environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -132,13 +132,13 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment/example-b.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/example-b.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -154,13 +154,13 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/EnvFile";
           contents = "FOO=BAR";
         }
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./environment/example-a.EnvFile";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/environment/example-a.EnvFile";
           source = ./helpers.tests.nix;
         }
       ];
@@ -173,8 +173,8 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./files/example";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/files/example";
           contents = "FOO=BAR";
         }
       ];
@@ -187,8 +187,8 @@ with
     {
       template = [
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./files/example";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/files/example";
           source = ./helpers.tests.nix;
         }
       ];
@@ -204,8 +204,8 @@ with
     {
       template = [
         {
-          command = "systemctl reload 'example.service'";
-          destination = "./files/example";
+          command = "systemctl try-reload-or-restart 'example.service'";
+          destination = "/run/keys/files/example";
           contents = "FOO=BAR";
         }
       ];
@@ -225,13 +225,13 @@ with
     {
       template = [
         {
-          command = "systemctl reload 'example.service'";
-          destination = "./files/example-a";
+          command = "systemctl try-reload-or-restart 'example.service'";
+          destination = "/run/keys/files/example-a";
           contents = "FOO=BAR";
         }
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./files/example-b";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/files/example-b";
           contents = "FOO=BAR";
         }
       ];
@@ -287,13 +287,13 @@ with
       ];
       template = [
         {
-          command = "systemctl reload 'example.service'";
-          destination = "./files/example-a";
+          command = "systemctl try-reload-or-restart 'example.service'";
+          destination = "/run/keys/files/example-a";
           contents = "FOO=BAR";
         }
         {
-          command = "systemctl restart 'example.service'";
-          destination = "./files/example-b";
+          command = "systemctl try-restart 'example.service'";
+          destination = "/run/keys/files/example-b";
           contents = "FOO=BAR";
         }
       ];

@@ -73,14 +73,23 @@ in
               ];
             }
           ];
+          template_config = [{
+            static_secret_render_interval = "5s";
+          }];
         };
-        secretFiles.files."example".template = "MY_SECRET=woohoo";
+
+        environment.template = ''
+          {{ with secret "sys/tools/random/1" "format=base64" }}
+          MY_SECRET={{ .Data.random_bytes }}
+          {{ end }}
+        '';
+        secretFiles.files."example".template = "hello";
       };
       systemd.services.example = {
-        script = "echo My secret is $MY_SECRET";
-        serviceConfig = {
-          RemainAfterExit = true;
-        };
+        script = ''
+          echo My secret is $MY_SECRET
+          sleep infinity
+        '';
       };
     })
     ''
@@ -88,7 +97,10 @@ in
       print(machine.succeed("sleep 5; journalctl -u setup-vault"))
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
-      print(machine.succeed("sleep 5; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep 5; journalctl -u example"))
+      print(machine.succeed("sleep 5; ls /run/keys"))
+      print(machine.succeed("sleep 1; ls /run/keys/environment"))
+      print(machine.succeed("sleep 1; cat /run/keys/environment/EnvFile"))
+      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
+      print(machine.succeed("sleep infinity"))
     '';
 }

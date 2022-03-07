@@ -23,7 +23,13 @@
 
   renderAgentConfig = targetService: cfg:
     let
-      mkCommandAttrset = restartAction:
+      mkCommandAttrset = requestedAction:
+        let
+          restartAction = {
+            restart = "try-restart";
+            reload = "try-reload-or-restart";
+          }."${requestedAction}";
+        in
         if restartAction == "none"
         then
           { }
@@ -36,7 +42,7 @@
         (lib.optional (cfg.environment.template != null)
           (
             (mkCommandAttrset cfg.environment.changeAction) // {
-              destination = "./environment.EnvFile";
+              destination = "/run/keys/environment/EnvFile";
               contents = cfg.environment.template;
             }
           ))
@@ -44,7 +50,7 @@
           (name: { file }:
             (
               (mkCommandAttrset cfg.environment.changeAction) // {
-                destination = "./environment/${name}.EnvFile";
+                destination = "/run/keys/environment/${name}.EnvFile";
                 source = file;
               }
             ))
@@ -54,7 +60,7 @@
         (name: { changeAction, templateFile, template }:
           (
             (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
-              destination = "./files/${name}";
+              destination = "/run/keys/files/${name}";
             } //
             (
               if template != null

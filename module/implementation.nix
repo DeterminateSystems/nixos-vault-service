@@ -31,14 +31,12 @@ let
       path = [ pkgs.glibc ];
 
       unitConfig = {
-        BindsTo = [ fullServiceName ];
+        # BindsTo = [ fullServiceName ];
       };
 
       serviceConfig = {
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
-        PrivateTmp = true;
-        WorkingDirectory = "/tmp";
       };
     };
 
@@ -50,7 +48,9 @@ let
       after = [ sidecarServiceName ];
       unitConfig = {
         JoinsNamespaceOf = sidecarServiceName;
-        EnvironmentFile = builtins.map (f: "/tmp/${f}") agentConfig.environmentFiles;
+      };
+      serviceConfig = {
+        EnvironmentFile = agentConfig.environmentFiles;
       };
     };
 in
@@ -59,22 +59,25 @@ in
     ./definition.nix
   ];
 
-  config = mkScopedMerge [ [ "systemd" "services" ] ]
-    (lib.mapAttrsToList
-      (serviceName: serviceConfig:
-        let
-          agentConfig = renderAgentConfig serviceName serviceConfig.vaultAgent;
-        in
-        {
-          systemd.services = {
-            "${serviceName}" = makeTargetServiceInfection {
-              inherit serviceName agentConfig;
+  config = lib.mkMerge [
+    (mkScopedMerge [ [ "systemd" "services" ] ]
+      (lib.mapAttrsToList
+        (serviceName: serviceConfig:
+          let
+            agentConfig = renderAgentConfig serviceName serviceConfig.vaultAgent;
+          in
+          {
+            systemd.services = {
+              "${serviceName}" = makeTargetServiceInfection {
+                inherit serviceName agentConfig;
+              };
+              "detsys-vaultAgent-${serviceName}" = makeAgentService {
+                inherit serviceName agentConfig;
+              };
             };
-            "detsys-vaultAgent-${serviceName}" = makeAgentService {
-              inherit serviceName agentConfig;
-            };
-          };
-        })
-      config.detsys.systemd.services
-    );
+          })
+        config.detsys.systemd.services
+      )
+    )
+  ];
 }

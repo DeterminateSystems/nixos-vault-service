@@ -101,7 +101,7 @@ in
       print(machine.succeed("sleep 1; ls /run/keys/environment"))
       print(machine.succeed("sleep 1; cat /run/keys/environment/EnvFile"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep infinity"))
+      print(machine.succeed("sleep 30"))
     '';
 
   secretFile = mkTest
@@ -203,6 +203,6 @@ in
       print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes"))
       print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes-v2"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep infinity"))
+      print(machine.succeed("sleep 30"))
     '';
 }

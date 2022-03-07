@@ -32,7 +32,7 @@ data "vault_policy_document" "agent" {
   }
 
   rule {
-    path         = "sys/tools/random/1"
+    path         = "sys/tools/random/*"
     capabilities = ["create", "update"]
   }
 }

@@ -170,8 +170,8 @@ in
         };
 
         secretFiles.files."rand_bytes".template = ''
-          {{ with secret "sys/tools/random/1" "format=base64" }}
-          Have some random bytes! {{ .Data.random_bytes }}
+          {{ with secret "sys/tools/random/3" "format=base64" }}
+          Have THREE random bytes! {{ .Data.random_bytes }}
           {{ end }}
         '';
       };

@@ -23,7 +23,7 @@ This temporary filessytem will be shared with the target service via the `JoinsN
 
 ```nix
 {
-  detsys.systemd.service."service-name".vaultAgent = {
+  detsys.systemd.services."service-name".vaultAgent = {
     enable = true;
 
     environment = {
@@ -38,7 +38,7 @@ This temporary filessytem will be shared with the target service via the `JoinsN
         # cannot be reloaded.
         changeAction = "restart";
 
-        
+
         templateFiles = {
             # An EnvironmentFile is created for each section here.
             "file-section" = {
@@ -93,7 +93,7 @@ Getting database credentials for Hydra:
 
 ```nix
 {
-  detsys.systemd.service.hydra-init.vaultAgent = {
+  detsys.systemd.services.hydra-init.vaultAgent = {
     enable = true;
 
     environment.template = ''
@@ -128,7 +128,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-    detsys.systemd.service.prometheus.vaultAgent = {
+    detsys.systemd.services.prometheus.vaultAgent = {
         enable = true;
 
         environment.templateFiles."dbi".file = ./hydra-dbi-env.ctmpl;
@@ -141,7 +141,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-  detsys.systemd.service.nginx.vaultAgent = {
+  detsys.systemd.services.nginx.vaultAgent = {
     enable = true;
 
     secretFiles = {
@@ -160,7 +160,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-    detsys.systemd.service.prometheus.vaultAgent = {
+    detsys.systemd.services.prometheus.vaultAgent = {
         enable = true;
 
         secretFiles = {
@@ -183,7 +183,7 @@ With a file named `vault-token.ctmpl`:
 
 ```nix
 {
-    detsys.systemd.service.prometheus.vaultAgent = {
+    detsys.systemd.services.prometheus.vaultAgent = {
         enable = true;
 
         secretFiles = {
@@ -193,3 +193,25 @@ With a file named `vault-token.ctmpl`:
     };
 }
 ```
+
+---
+
+# Running tests
+
+Validate the module's definition passes checks.
+
+```
+nix-instantiate --strict --eval --json ./default.nix -A checks.definition
+```
+
+Or interactively on each change:
+
+```
+git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A checks.definition | jq .'
+```
+
+----
+
+# Bugs
+
+* the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.

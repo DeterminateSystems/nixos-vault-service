@@ -1,0 +1,67 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - name: Terraform fmt
+        run: nix-shell --run 'terraform fmt -check -recursive ./terraform'
+      - name: Terraform init
+        run: |
+          nix-shell --run '
+            for dir in $(find terraform -type d); do
+              echo "initializing dir $dir"
+              terraform -chdir=$dir init -backend=false
+            done
+          '
+      - name: Terraform validate
+        run: |
+          nix-shell --run '
+            for dir in $(find terraform -type d); do
+              echo "validating dir $dir"
+              terraform -chdir=$dir validate -no-color
+            done
+          '
+
+  NixFormat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: cachix/install-nix-action@v13
+      - name: Check nixpkgs-fmt formatting
+        run: .github/workflows/fmt.sh
+
+  Shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - name: Shellcheck ./scripts/
+        run: nix-shell --run 'shellcheck $(git ls-files | grep "\.sh$")'
+
+  DefinitionTests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v13
+      - name: Evaluation cases of the module's definition
+        run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
+      - name: Evaluation cases of the helpers
+        run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers

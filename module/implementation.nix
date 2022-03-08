@@ -16,7 +16,7 @@ let
       (file: "${waiter} ${lib.escapeShellArg file}")
       files);
 
-  makeAgentService = { serviceName, agentConfig }:
+  makeAgentService = { serviceName, agentConfig, systemdUnitConfig }:
     let
       fullServiceName = "${serviceName}.service";
       agentCfgFile = pkgs.writeText "detsys-vaultAgent-${serviceName}.json"
@@ -35,6 +35,12 @@ let
       };
 
       serviceConfig = {
+        inherit (systemdUnitConfig.serviceConfig)
+          User
+          Group
+          ;
+
+        PrivateTmp = true;
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
       };
@@ -50,6 +56,7 @@ let
         JoinsNamespaceOf = sidecarServiceName;
       };
       serviceConfig = {
+        PrivateTmp = true;
         EnvironmentFile = agentConfig.environmentFiles;
       };
     };
@@ -73,6 +80,7 @@ in
               };
               "detsys-vaultAgent-${serviceName}" = makeAgentService {
                 inherit serviceName agentConfig;
+                systemdUnitConfig = config.systemd.services."${serviceName}";
               };
             };
           })

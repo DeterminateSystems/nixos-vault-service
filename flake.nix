@@ -35,6 +35,7 @@
               ]))
               foreman
               jq
+              nixpkfs-fmt
               vault
             ];
           }

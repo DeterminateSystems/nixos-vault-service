@@ -322,8 +322,6 @@ in
         wantedBy = [ "default.target" ];
         after = [ "vault.service" ];
         path = [
-          pkgs.vault
-          pkgs.getent
           (pkgs.terraform_1.withPlugins (tf: [
             tf.local
             tf.vault
@@ -342,8 +340,6 @@ in
           cp -r ${../terraform}/* ./
           terraform init
           terraform apply -auto-approve
-
-          VAULT_ADDR="http://127.0.0.1:8200" vault kv put internalservices/kv/monitoring/prometheus-basic-auth htpasswd='this is totally a valid htpasswd, I promise ;)'
 
           ls /
         '';

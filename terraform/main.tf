@@ -50,6 +50,18 @@ data "vault_policy_document" "agent" {
   }
 }
 
+resource "vault_generic_secret" "htpasswd" {
+  path = "${vault_mount.kv-v2.path}/monitoring/prometheus-basic-auth"
+
+  data_json = <<EOT
+{
+  "username": "test",
+  "password": "test",
+  "htpasswd": "$apr1$3lcQaaG5$Hfd.F6Ac03Obz247iB8rv0"
+}
+EOT
+}
+
 resource "local_file" "role_id" {
   filename = "../role_id"
   content  = vault_approle_auth_backend_role.agent.role_id

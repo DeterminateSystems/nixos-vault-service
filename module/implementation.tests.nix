@@ -345,7 +345,15 @@ in
         '';
       };
 
-      detsys.systemd.services.example.vaultAgent = {
+      services.nginx = {
+        enable = true;
+        virtualHosts."localhost" = {
+          basicAuthFile = "/run/keys/files/prometheus-basic-auth";
+          root = pkgs.writeTextDir "index.html" "<h1>Hi</h1>";
+        };
+      };
+
+      detsys.systemd.services.nginx.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [
@@ -370,6 +378,7 @@ in
         };
 
         secretFiles.files."prometheus-basic-auth" = {
+          # FIXME: there is no way to set the group!
           changeAction = "none";
           template = ''
             {{ with secret "internalservices/kv/monitoring/prometheus-basic-auth" }}
@@ -379,23 +388,30 @@ in
         };
       };
 
-      systemd.services.example = {
-        # FIXME: maybe provide env var or attribute that contains the resulting file path?
-        script = ''
-          echo Basic auth is:
-          cat /run/keys/files/prometheus-basic-auth
-          sleep infinity
-        '';
-      };
+      # systemd.services.example = {
+      #   # FIXME: maybe provide env var or attribute that contains the resulting file path?
+      #   script = ''
+      #     echo Basic auth is:
+      #     cat /run/keys/files/prometheus-basic-auth
+      #     sleep infinity
+      #   '';
+      # };
     })
     ''
       machine.wait_for_job("setup-vault")
       print(machine.succeed("sleep 5; journalctl -u setup-vault"))
-      machine.start_job("example")
-      machine.wait_for_job("detsys-vaultAgent-example")
+      machine.start_job("nginx")
+      machine.wait_for_job("detsys-vaultAgent-nginx")
       print(machine.succeed("sleep 5; ls /run/keys"))
       print(machine.succeed("sleep 1; ls /run/keys/files"))
       print(machine.succeed("sleep 1; cat /run/keys/files/prometheus-basic-auth"))
-      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
+      print(machine.succeed("sleep 1; stat /run/keys/files/prometheus-basic-auth"))
+      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-nginx"))
+
+      machine.wait_for_unit("nginx")
+      machine.wait_for_open_port(80)
+      print(machine.fail("curl --fail http://localhost"))
+      print(machine.succeed("curl --fail http://test:test@localhost"))
+      machine.succeed("sleep infinity")
     '';
 }

@@ -3,6 +3,11 @@ provider "vault" {
   token   = "abc123"
 }
 
+resource "vault_mount" "kv-v2" {
+  path = "internalservices/kv"
+  type = "kv-v2"
+}
+
 resource "vault_auth_backend" "approle" {
   type = "approle"
 
@@ -34,6 +39,14 @@ data "vault_policy_document" "agent" {
   rule {
     path         = "sys/tools/random/*"
     capabilities = ["create", "update"]
+  }
+
+  # NOTE: When using kv-v2, the data/ prefix is required in the policy, but not
+  # for `vault put`/`vault get`
+  # https://support.hashicorp.com/hc/en-us/articles/4407386653843-Vault-KV-V2-Secrets-Engine-Permission-Denied-
+  rule {
+    path         = "internalservices/kv/data/monitoring/prometheus-basic-auth"
+    capabilities = ["read"]
   }
 }
 

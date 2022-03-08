@@ -174,7 +174,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/files/example";
+          destination = "/tmp/example";
           contents = "FOO=BAR";
         }
       ];
@@ -188,7 +188,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/files/example";
+          destination = "/tmp/example";
           source = ./helpers.tests.nix;
         }
       ];
@@ -205,7 +205,7 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/run/keys/files/example";
+          destination = "/tmp/example";
           contents = "FOO=BAR";
         }
       ];
@@ -226,12 +226,12 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/run/keys/files/example-a";
+          destination = "/tmp/example-a";
           contents = "FOO=BAR";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/files/example-b";
+          destination = "/tmp/example-b";
           contents = "FOO=BAR";
         }
       ];
@@ -288,12 +288,12 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/run/keys/files/example-a";
+          destination = "/tmp/example-a";
           contents = "FOO=BAR";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/files/example-b";
+          destination = "/tmp/example-b";
           contents = "FOO=BAR";
         }
       ];

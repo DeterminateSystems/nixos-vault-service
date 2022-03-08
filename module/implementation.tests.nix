@@ -188,8 +188,8 @@ in
 
       systemd.services.example = {
         script = ''
-          cat /run/keys/files/rand_bytes
-          cat /run/keys/files/rand_bytes-v2
+          cat /tmp/rand_bytes
+          cat /tmp/rand_bytes-v2
           sleep infinity
         '';
       };
@@ -200,9 +200,9 @@ in
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("sleep 5; ls /run/keys"))
-      print(machine.succeed("sleep 1; ls /run/keys/files"))
-      print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes"))
-      print(machine.succeed("sleep 1; cat /run/keys/files/rand_bytes-v2"))
+      print(machine.succeed("sleep 1; ls /tmp"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/rand_bytes"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/rand_bytes-v2"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep 30"))
     '';
@@ -287,7 +287,7 @@ in
           while sleep 5
           do
             echo Reading a secret from a file that is constantly being overwritten:
-            cat /run/keys/files/slow
+            cat /tmp/slow
           done
 
           sleep infinity
@@ -300,8 +300,8 @@ in
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("sleep 5; ls /run/keys"))
-      print(machine.succeed("sleep 1; ls /run/keys/files"))
-      print(machine.succeed("sleep 1; cat /run/keys/files/slow"))
+      print(machine.succeed("sleep 1; ls /tmp"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/slow"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep 30"))
     '';
@@ -348,7 +348,7 @@ in
       services.nginx = {
         enable = true;
         virtualHosts."localhost" = {
-          basicAuthFile = "/run/keys/files/prometheus-basic-auth";
+          basicAuthFile = "/tmp/prometheus-basic-auth";
           root = pkgs.writeTextDir "index.html" "<h1>Hi</h1>";
         };
       };
@@ -378,40 +378,26 @@ in
         };
 
         secretFiles.files."prometheus-basic-auth" = {
-          # FIXME: there is no way to set the group!
+          # FIXME: there is no way to set the group! (escape hatch)
+          # FIXME: maybe provide env var or attribute that contains the resulting file path?
           changeAction = "none";
           template = ''
             {{ with secret "internalservices/kv/monitoring/prometheus-basic-auth" }}
-            {{ .Data.data.htpasswd }}
+            {{ .Data.data.username }}:{{ .Data.data.htpasswd }}
             {{ end }}
           '';
         };
       };
-
-      # systemd.services.example = {
-      #   # FIXME: maybe provide env var or attribute that contains the resulting file path?
-      #   script = ''
-      #     echo Basic auth is:
-      #     cat /run/keys/files/prometheus-basic-auth
-      #     sleep infinity
-      #   '';
-      # };
     })
     ''
       machine.wait_for_job("setup-vault")
-      print(machine.succeed("sleep 5; journalctl -u setup-vault"))
       machine.start_job("nginx")
       machine.wait_for_job("detsys-vaultAgent-nginx")
-      print(machine.succeed("sleep 5; ls /run/keys"))
-      print(machine.succeed("sleep 1; ls /run/keys/files"))
-      print(machine.succeed("sleep 1; cat /run/keys/files/prometheus-basic-auth"))
-      print(machine.succeed("sleep 1; stat /run/keys/files/prometheus-basic-auth"))
-      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-nginx"))
+      machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-nginx.service -p PrivateTmp=true cat /tmp/prometheus-basic-auth")
 
       machine.wait_for_unit("nginx")
       machine.wait_for_open_port(80)
       print(machine.fail("curl --fail http://localhost"))
       print(machine.succeed("curl --fail http://test:test@localhost"))
-      machine.succeed("sleep infinity")
     '';
 }

@@ -13,6 +13,7 @@ with
       (lib.evalModules {
         modules = [
           "${path}/nixos/modules/misc/assertions.nix"
+          ./mock-systemd-module.nix
           ./definition.nix
           config
         ];
@@ -73,10 +74,12 @@ with
 );
 suite {
   nothingSet = expectOk {
+    systemd.services.nothing-set = { };
     detsys.systemd.services.nothing-set.vaultAgent = { };
   };
 
   envTemplate = expectOk {
+    systemd.services.env-template = { };
     detsys.systemd.services.env-template.vaultAgent = {
       enable = true;
 
@@ -89,6 +92,7 @@ suite {
   };
 
   envTemplateFile = expectOk {
+    systemd.services.env-template-file = { };
     detsys.systemd.services.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example".file = ./example.ctmpl;
@@ -96,6 +100,7 @@ suite {
   };
 
   envTemplateFileNone = expectEvalError {
+    systemd.services.env-template-file = { };
     detsys.systemd.services.env-template-file.vaultAgent = {
       enable = true;
       environment.templateFiles."example" = { };
@@ -103,6 +108,7 @@ suite {
   };
 
   secretTemplateFile = expectOk {
+    systemd.services.secret-template-file = { };
     detsys.systemd.services.secret-template-file.vaultAgent = {
       enable = true;
       secretFiles = {
@@ -112,6 +118,7 @@ suite {
   };
 
   secretTemplate = expectOk {
+    systemd.services.secret-template = { };
     detsys.systemd.services.secret-template.vaultAgent = {
       enable = true;
       secretFiles = {
@@ -130,6 +137,7 @@ suite {
       ];
     }
     {
+      systemd.services.secret-template = { };
       detsys.systemd.services.secret-template.vaultAgent = {
         enable = true;
         secretFiles = {
@@ -146,6 +154,7 @@ suite {
       ];
     }
     {
+      systemd.services.secret-template = { };
       detsys.systemd.services.secret-template.vaultAgent = {
         enable = true;
         secretFiles = {
@@ -157,4 +166,28 @@ suite {
         };
       };
     };
+
+  mainServiceDisablesPrivateTmp =
+    expectAssertsWarns
+      {
+        assertions = [
+          ''
+            detsys.systemd.services.no-private-tmp:
+                The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it is
+                required to share secrets between the sidecar service and the infected service.
+          ''
+        ];
+      }
+      {
+        systemd.services.no-private-tmp.serviceConfig.PrivateTmp = false;
+        detsys.systemd.services.no-private-tmp.vaultAgent = {
+          enable = true;
+          secretFiles = {
+            defaultChangeAction = "reload";
+            files."example".template = ''
+              ...
+            '';
+          };
+        };
+      };
 }

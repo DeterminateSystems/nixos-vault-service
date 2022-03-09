@@ -14,6 +14,7 @@ with
       (lib.evalModules {
         modules = [
           "${path}/nixos/modules/misc/assertions.nix"
+          ./mock-systemd-module.nix
           ./definition.nix
           config
         ];
@@ -27,7 +28,10 @@ with
   {
     expectRenderedConfig = cfg: expect:
       let
-        evaluatedCfg = evalCfg { detsys.systemd.services.example.vaultAgent = cfg; };
+        evaluatedCfg = evalCfg {
+          systemd.services.example = { };
+          detsys.systemd.services.example.vaultAgent = cfg;
+        };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);

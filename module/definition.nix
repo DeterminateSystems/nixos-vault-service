@@ -133,5 +133,24 @@ in
             serviceConfig.vaultAgent.secretFiles.files);
         })
         config.detsys.systemd.services))
+    (mkScopedMerge [ [ "assertions" ] ]
+      (lib.mapAttrsToList
+        (serviceName: serviceConfig: {
+          assertions = [
+            {
+              assertion =
+                let
+                  systemdServiceConfig = config.systemd.services."${serviceName}".serviceConfig;
+                in
+                  !(systemdServiceConfig ? PrivateTmp && !systemdServiceConfig.PrivateTmp);
+              message = ''
+                detsys.systemd.services.${serviceName}:
+                    The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it is
+                    required to share secrets between the sidecar service and the infected service.
+              '';
+            }
+          ];
+        })
+        config.detsys.systemd.services))
   ];
 }

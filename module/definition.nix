@@ -115,22 +115,23 @@ in
     default = { };
   };
 
-  config = mkScopedMerge [ [ "assertions" ] ]
-    (lib.mapAttrsToList
-      (serviceName: serviceConfig: {
-        assertions = lib.flatten (lib.mapAttrsToList
-          (secretFileName: secretFileConfig: [
-            {
-              assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
-              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
-            }
-            {
-              assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
-              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
-            }
-          ])
-          serviceConfig.vaultAgent.secretFiles.files);
-      })
-      config.detsys.systemd.services
-    );
+  config = lib.mkMerge [
+    (mkScopedMerge [ [ "assertions" ] ]
+      (lib.mapAttrsToList
+        (serviceName: serviceConfig: {
+          assertions = lib.flatten (lib.mapAttrsToList
+            (secretFileName: secretFileConfig: [
+              {
+                assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
+                message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
+              }
+              {
+                assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
+                message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
+              }
+            ])
+            serviceConfig.vaultAgent.secretFiles.files);
+        })
+        config.detsys.systemd.services))
+  ];
 }

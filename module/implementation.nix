@@ -36,7 +36,7 @@ let
       };
 
       serviceConfig = {
-        PrivateTmp = true;
+        PrivateTmp = lib.mkDefault true;
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
       }
@@ -55,7 +55,7 @@ let
         JoinsNamespaceOf = sidecarServiceName;
       };
       serviceConfig = {
-        PrivateTmp = true;
+        PrivateTmp = lib.mkDefault true;
         EnvironmentFile = agentConfig.environmentFiles;
       };
     };

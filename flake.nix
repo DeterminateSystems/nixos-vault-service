@@ -25,6 +25,11 @@
         });
     in
     {
+      nixosModule = self.nixosModules.nixos-vault-service;
+      nixosModules = {
+        nixos-vault-service = import ./module/implementation.nix;
+      };
+
       devShell = forAllSystems
         ({ pkgs, ... }:
           pkgs.mkShell {

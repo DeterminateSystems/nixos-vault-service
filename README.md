@@ -15,6 +15,9 @@ If the user manually start, restarts, or stops the target service, the agent sid
 
 ### Where do the files go?
 
+> **NOTE:** Currently, we use the systemd `PrivateTmp` directive, which interacts with `JoinsNamespaceOf` in a documented fashion.
+> It is unknown at this time whether `TemporaryFileSystem` exhibits the same functionality (namely, sharing of mountpoints between services) when used in conjunction with `JoinsNamespaceOf`. 
+
 We'll create a temporary filesystem in the sidecar using the `TemporaryFileSystem` at `/run/detsys/vaultAgent`.
 All generated, secret files will go there.
 This temporary filessytem will be shared with the target service via the `JoinsNamespaceOf` directive..
@@ -210,8 +213,18 @@ Or interactively on each change:
 git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A checks.definition | jq .'
 ```
 
+## Tips for writing tests
+
+To read the secret file (e.g. to verify the contents), you will need to join the namespace of the sidecar vaultAgent unit:
+
+```
+systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p PrivateTmp=true cat /tmp/detsys-vault/some-secret-file
+```
+
 ----
 
-# Bugs
+# Known Issues
 
 * the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
+* there is no way to set the permissions of secret files
+* there is no way to get the file path of the secret file, so you have to "just know" where it will be

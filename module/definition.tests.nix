@@ -173,8 +173,8 @@ suite {
         assertions = [
           ''
             detsys.systemd.services.no-private-tmp:
-                The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it is
-                required to share secrets between the sidecar service and the infected service.
+                The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it must
+                be enabled to share secrets between the sidecar service and the infected service.
           ''
         ];
       }

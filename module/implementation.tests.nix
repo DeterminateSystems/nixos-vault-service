@@ -378,8 +378,6 @@ in
         };
 
         secretFiles.files."prometheus-basic-auth" = {
-          # FIXME: there is no way to set the group! (escape hatch)
-          # FIXME: maybe provide env var or attribute that contains the resulting file path?
           changeAction = "none";
           template = ''
             {{ with secret "internalservices/kv/monitoring/prometheus-basic-auth" }}

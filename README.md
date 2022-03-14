@@ -223,6 +223,8 @@ systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p Private
 
 ----
 
-# Bugs
+# Known Issues
 
 * the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
+* there is no way to set the permissions of secret files
+* there is no way to get the file path of the secret file, so you have to "just know" where it will be

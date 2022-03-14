@@ -83,8 +83,6 @@ in
               };
             };
           })
-        config.detsys.systemd.services
-      )
-    )
+        config.detsys.systemd.services))
   ];
 }

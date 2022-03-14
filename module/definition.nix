@@ -115,22 +115,42 @@ in
     default = { };
   };
 
-  config = mkScopedMerge [ [ "assertions" ] ]
-    (lib.mapAttrsToList
-      (serviceName: serviceConfig: {
-        assertions = lib.flatten (lib.mapAttrsToList
-          (secretFileName: secretFileConfig: [
+  config = lib.mkMerge [
+    (mkScopedMerge [ [ "assertions" ] ]
+      (lib.mapAttrsToList
+        (serviceName: serviceConfig: {
+          assertions = lib.flatten (lib.mapAttrsToList
+            (secretFileName: secretFileConfig: [
+              {
+                assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
+                message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
+              }
+              {
+                assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
+                message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
+              }
+            ])
+            serviceConfig.vaultAgent.secretFiles.files);
+        })
+        config.detsys.systemd.services))
+    (mkScopedMerge [ [ "assertions" ] ]
+      (lib.mapAttrsToList
+        (serviceName: serviceConfig: {
+          assertions = [
             {
-              assertion = !(secretFileConfig.templateFile == null && secretFileConfig.template == null);
-              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: One of the 'templateFile' and 'template' options must be specified.";
+              assertion =
+                let
+                  systemdServiceConfig = config.systemd.services."${serviceName}".serviceConfig;
+                in
+                  !(systemdServiceConfig ? PrivateTmp && !systemdServiceConfig.PrivateTmp);
+              message = ''
+                detsys.systemd.services.${serviceName}:
+                    The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it must
+                    be enabled to share secrets between the sidecar service and the infected service.
+              '';
             }
-            {
-              assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
-              message = "detsys.systemd.services.${serviceName}.vaultAgent.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
-            }
-          ])
-          serviceConfig.vaultAgent.secretFiles.files);
-      })
-      config.detsys.systemd.services
-    );
+          ];
+        })
+        config.detsys.systemd.services))
+  ];
 }

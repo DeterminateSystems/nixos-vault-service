@@ -5,16 +5,30 @@ let
     mkScopedMerge
     renderAgentConfig;
 
-  waiter = pkgs.writeScript "wait-for" ''
-    set -eux
-    while [ ! -f "$1" ]; do
-      sleep 1
-    done
-  '';
-  waitFor = serviceName: files: pkgs.writeShellScript "wait-for-${serviceName}"
-    (lib.concatMapStringsSep "\n"
-      (file: "${waiter} ${lib.escapeShellArg file}")
-      files);
+  waitFor = serviceName: files:
+    let
+      waiter = lib.concatMapStringsSep "\n"
+        (file:
+          let
+            # NOTE: We `escapeRegex` because inotifywait's `--include` flag
+            # accepts POSIX regex. Attempting to watch for "some.secret" would
+            # match "some.secret", "some0secret", "someasecret", etc., which is
+            # not ideal.
+            file' = lib.removePrefix "/tmp/detsys-vault/" (lib.escapeShellArg (lib.escapeRegex file));
+          in
+          ''
+            if [ ! -f ${lib.escapeShellArg file} ]; then
+              ${pkgs.inotify-tools}/bin/inotifywait --quiet --event close_write --include ${file'} /tmp/detsys-vault &
+            fi
+          '')
+        files;
+    in
+    pkgs.writeShellScript "wait-for-${serviceName}" ''
+      set -eux
+      ${pkgs.inotify-tools}/bin/inotifywait --quiet --event create --include 'detsys-vault' /tmp
+      ${waiter}
+      wait
+    '';
 
   makeAgentService = { serviceName, agentConfig, systemdUnitConfig }:
     let

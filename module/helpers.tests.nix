@@ -174,7 +174,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/example";
+          destination = "/tmp/detsys-vault/example";
           contents = "FOO=BAR";
         }
       ];
@@ -188,7 +188,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/example";
+          destination = "/tmp/detsys-vault/example";
           source = ./helpers.tests.nix;
         }
       ];
@@ -205,7 +205,7 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/example";
+          destination = "/tmp/detsys-vault/example";
           contents = "FOO=BAR";
         }
       ];
@@ -226,12 +226,12 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/example-a";
+          destination = "/tmp/detsys-vault/example-a";
           contents = "FOO=BAR";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/example-b";
+          destination = "/tmp/detsys-vault/example-b";
           contents = "FOO=BAR";
         }
       ];
@@ -288,12 +288,12 @@ with
       template = [
         {
           command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/example-a";
+          destination = "/tmp/detsys-vault/example-a";
           contents = "FOO=BAR";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/example-b";
+          destination = "/tmp/detsys-vault/example-b";
           contents = "FOO=BAR";
         }
       ];

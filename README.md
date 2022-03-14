@@ -218,7 +218,7 @@ git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A 
 To read the secret file (e.g. to verify the contents), you will need to join the namespace of the sidecar vaultAgent unit:
 
 ```
-systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p PrivateTmp=true cat /tmp/some-secret-file
+systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p PrivateTmp=true cat /tmp/detsys-vault/some-secret-file
 ```
 
 ----

@@ -62,7 +62,7 @@
           (
             (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
               # This is ~safe because we require PrivateTmp to be true.
-              destination = "/tmp/${name}";
+              destination = "/tmp/detsys-vault/${name}";
             } //
             (
               if template != null

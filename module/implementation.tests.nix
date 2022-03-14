@@ -188,8 +188,8 @@ in
 
       systemd.services.example = {
         script = ''
-          cat /tmp/rand_bytes
-          cat /tmp/rand_bytes-v2
+          cat /tmp/detsys-vault/rand_bytes
+          cat /tmp/detsys-vault/rand_bytes-v2
           sleep infinity
         '';
       };
@@ -201,8 +201,8 @@ in
       machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("sleep 5; ls /run/keys"))
       print(machine.succeed("sleep 1; ls /tmp"))
-      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/rand_bytes"))
-      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/rand_bytes-v2"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep 30"))
     '';
@@ -287,7 +287,7 @@ in
           while sleep 5
           do
             echo Reading a secret from a file that is constantly being overwritten:
-            cat /tmp/slow
+            cat /tmp/detsys-vault/slow
           done
 
           sleep infinity
@@ -301,7 +301,7 @@ in
       machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("sleep 5; ls /run/keys"))
       print(machine.succeed("sleep 1; ls /tmp"))
-      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/slow"))
+      print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/slow"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
       print(machine.succeed("sleep 30"))
     '';
@@ -348,7 +348,7 @@ in
       services.nginx = {
         enable = true;
         virtualHosts."localhost" = {
-          basicAuthFile = "/tmp/prometheus-basic-auth";
+          basicAuthFile = "/tmp/detsys-vault/prometheus-basic-auth";
           root = pkgs.writeTextDir "index.html" "<h1>Hi</h1>";
         };
       };
@@ -391,7 +391,7 @@ in
       machine.wait_for_job("setup-vault")
       machine.start_job("nginx")
       machine.wait_for_job("detsys-vaultAgent-nginx")
-      machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-nginx.service -p PrivateTmp=true cat /tmp/prometheus-basic-auth")
+      machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-nginx.service -p PrivateTmp=true cat /tmp/detsys-vault/prometheus-basic-auth")
 
       machine.wait_for_unit("nginx")
       machine.wait_for_open_port(80)

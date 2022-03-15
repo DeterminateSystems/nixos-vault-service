@@ -5,6 +5,26 @@ let
     mkScopedMerge
     renderAgentConfig;
 
+  precreateTemplateFiles = serviceName: files: { user ? null, group ? null, mode ? "0400" }:
+    let
+      create = lib.concatMapStringsSep "\n"
+        (file:
+          let
+            dest = lib.escapeShellArg file;
+          in
+          ''
+            mkdir -p "$(dirname ${dest})"
+            touch ${dest}
+            chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
+            chmod ${lib.escapeShellArg mode} ${dest}
+          '')
+        files;
+    in
+    pkgs.writeShellScript "precreate-files-for-${serviceName}" ''
+      set -eux
+      ${create}
+    '';
+
   waitFor = serviceName: files:
     let
       waiter = lib.concatMapStringsSep "\n"
@@ -51,11 +71,13 @@ let
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
+        ExecStartPre = precreateTemplateFiles serviceName agentConfig.secretFiles
+          ({ }
+            // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
+            // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
-      }
-      // lib.optionalAttrs (systemdServiceConfig ? User) { inherit (systemdServiceConfig) User; }
-      // lib.optionalAttrs (systemdServiceConfig ? Group) { inherit (systemdServiceConfig) Group; };
+      };
 
     };
 

@@ -391,6 +391,7 @@ in
       machine.wait_for_job("setup-vault")
       machine.start_job("nginx")
       machine.wait_for_job("detsys-vaultAgent-nginx")
+      machine.succeed("sleep 5")
       machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-nginx.service -p PrivateTmp=true cat /tmp/detsys-vault/prometheus-basic-auth")
 
       machine.wait_for_unit("nginx")

@@ -20,7 +20,7 @@ resource "vault_auth_backend" "approle" {
 resource "vault_approle_auth_backend_role" "agent" {
   backend        = vault_auth_backend.approle.path
   role_name      = "agent"
-  token_policies = [vault_policy.agent.name]
+  token_policies = [vault_policy.agent.name, vault_policy.token.name]
   token_ttl      = 30
   token_max_ttl  = 60
 }
@@ -48,6 +48,39 @@ data "vault_policy_document" "agent" {
     path         = "${vault_mount.kv-v2.path}/data/monitoring/prometheus-basic-auth"
     capabilities = ["read"]
   }
+}
+
+resource "vault_policy" "token" {
+  name   = "token"
+  policy = data.vault_policy_document.token.hcl
+}
+
+data "vault_policy_document" "token" {
+  rule {
+    path         = "auth/token/create"
+    capabilities = ["create", "update"]
+  }
+
+  rule {
+    path         = "auth/token/renew-self"
+    capabilities = ["create", "update"]
+  }
+
+  rule {
+    path         = "${vault_mount.kv-v2.path}/data/needs-token"
+    capabilities = ["read"]
+  }
+}
+
+resource "vault_generic_secret" "needs-token" {
+  path = "${vault_mount.kv-v2.path}/needs-token"
+
+  data_json = <<EOT
+{
+  "username": "testlol",
+  "password": "loltest"
+}
+EOT
 }
 
 resource "vault_generic_secret" "htpasswd" {

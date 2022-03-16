@@ -45,7 +45,7 @@ data "vault_policy_document" "agent" {
   # for `vault put`/`vault get`
   # https://support.hashicorp.com/hc/en-us/articles/4407386653843-Vault-KV-V2-Secrets-Engine-Permission-Denied-
   rule {
-    path         = "internalservices/kv/data/monitoring/prometheus-basic-auth"
+    path         = "${vault_mount.kv-v2.path}/data/monitoring/prometheus-basic-auth"
     capabilities = ["read"]
   }
 }

@@ -105,6 +105,12 @@ let
         type = types.nullOr types.lines;
         default = null;
       };
+
+      perms = mkOption {
+        description = "The mode of the secret file.";
+        type = types.str;
+        default = "0400";
+      };
     };
   };
 

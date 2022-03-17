@@ -180,6 +180,7 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "/tmp/detsys-vault/example";
           contents = "FOO=BAR";
+          perms = "0400";
         }
       ];
     };
@@ -194,6 +195,7 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "/tmp/detsys-vault/example";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -211,6 +213,7 @@ with
           command = "systemctl try-reload-or-restart 'example.service'";
           destination = "/tmp/detsys-vault/example";
           contents = "FOO=BAR";
+          perms = "0400";
         }
       ];
     };
@@ -223,6 +226,7 @@ with
         files."example-b" = {
           changeAction = "restart";
           template = "FOO=BAR";
+          perms = "0600";
         };
       };
     }
@@ -232,11 +236,13 @@ with
           command = "systemctl try-reload-or-restart 'example.service'";
           destination = "/tmp/detsys-vault/example-a";
           contents = "FOO=BAR";
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
           destination = "/tmp/detsys-vault/example-b";
           contents = "FOO=BAR";
+          perms = "0600";
         }
       ];
     };
@@ -268,6 +274,7 @@ with
         files."example-b" = {
           changeAction = "restart";
           template = "FOO=BAR";
+          perms = "0700";
         };
       };
     }
@@ -294,11 +301,13 @@ with
           command = "systemctl try-reload-or-restart 'example.service'";
           destination = "/tmp/detsys-vault/example-a";
           contents = "FOO=BAR";
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
           destination = "/tmp/detsys-vault/example-b";
           contents = "FOO=BAR";
+          perms = "0700";
         }
       ];
     };

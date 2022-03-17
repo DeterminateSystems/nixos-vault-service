@@ -58,11 +58,12 @@
           cfg.environment.templateFiles);
 
       secretFileTemplates = lib.mapAttrsToList
-        (name: { changeAction, templateFile, template }:
+        (name: { changeAction, templateFile, template, perms }:
           (
             (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
               # This is ~safe because we require PrivateTmp to be true.
               destination = "/tmp/detsys-vault/${name}";
+              inherit perms;
             } //
             (
               if template != null

@@ -5,18 +5,22 @@ let
     mkScopedMerge
     renderAgentConfig;
 
-  precreateTemplateFiles = serviceName: files: { user ? null, group ? null, mode ? "0400" }:
+  precreateTemplateFiles = serviceName: files: { user ? null, group ? null }:
     let
       create = lib.concatMapStringsSep "\n"
         (file:
           let
             dest = lib.escapeShellArg file;
+
+            # NOTE: We use process substitution of `:` so that, if the service
+            # this is running under is not allowed to read devices (e.g.
+            # /dev/null), the file still gets created with the proper
+            # permissions.
           in
           ''
             mkdir -p "$(dirname ${dest})"
-            touch ${dest}
+            install -m 000 <(:) ${dest}
             chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
-            chmod ${lib.escapeShellArg mode} ${dest}
           '')
         files;
     in

@@ -51,6 +51,9 @@ let
 
     in
     {
+      requires = [ "network.target" ];
+      after = [ "network.target" ];
+
       wantedBy = [ fullServiceName ];
       before = [ fullServiceName ];
 

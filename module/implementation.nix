@@ -11,16 +11,15 @@ let
         (file:
           let
             dest = lib.escapeShellArg file;
-
-            # NOTE: We use process substitution of `:` so that, if the service
-            # this is running under is not allowed to read devices (e.g.
-            # /dev/null), the file still gets created with the proper
-            # permissions.
           in
           ''
             mkdir -p "$(dirname ${dest})"
-            install -m 000 <(:) ${dest}
-            chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
+
+            (
+              umask 777
+              touch ${dest}
+              chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
+            )
           '')
         files;
     in

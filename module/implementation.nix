@@ -13,9 +13,9 @@ let
             dest = lib.escapeShellArg file;
           in
           ''
-            mkdir -p "$(dirname ${dest})"
-
             (
+              umask 027
+              mkdir -p "$(dirname ${dest})"
               umask 777
               touch ${dest}
               chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}

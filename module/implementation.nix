@@ -62,6 +62,8 @@ let
 
       unitConfig = {
         # BindsTo = [ fullServiceName ];
+        StartLimitIntervalSec = 200;
+        StartLimitBurst = 6;
       };
 
       serviceConfig = {
@@ -74,6 +76,9 @@ let
         ExecStartPost = waitFor serviceName
           (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
             ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
+
+        Restart = "on-failure";
+        RestartSec = 5;
       };
 
     };

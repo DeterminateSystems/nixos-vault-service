@@ -544,6 +544,12 @@ in
           }];
         };
 
+        environment.template = ''
+          {{ with secret "sys/tools/random/9" "format=base64" }}
+          NINE_BYTES={{ .Data.random_bytes }}
+          {{ end }}
+        '';
+
         secretFiles.files."rand_bytes" = {
           perms = "0642";
           template = ''
@@ -566,6 +572,7 @@ in
         script = ''
           cat /tmp/detsys-vault/rand_bytes
           cat /tmp/detsys-vault/rand_bytes-v2
+          echo Have NINE random bytes, from a templated EnvironmentFile! $NINE_BYTES
           sleep infinity
         '';
       };
@@ -582,5 +589,7 @@ in
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes-v2"))
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /run/keys/environment/EnvFile"))
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /run/keys/environment/EnvFile"))
     '';
 }

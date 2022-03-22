@@ -1,5 +1,5 @@
 { lib }:
-{
+rec {
   secretFilesRoot = "/tmp/detsys-vault/";
   environmentFilesRoot = "/run/keys/environment/";
 
@@ -46,7 +46,7 @@
         (lib.optional (cfg.environment.template != null)
           (
             (mkCommandAttrset cfg.environment.changeAction) // {
-              destination = "/run/keys/environment/EnvFile";
+              destination = "${environmentFilesRoot}EnvFile";
               contents = cfg.environment.template;
               inherit (cfg.environment) perms;
             }
@@ -55,7 +55,7 @@
           (name: { file, perms }:
             (
               (mkCommandAttrset cfg.environment.changeAction) // {
-                destination = "/run/keys/environment/${name}.EnvFile";
+                destination = "${environmentFilesRoot}${name}.EnvFile";
                 source = file;
                 inherit perms;
               }
@@ -67,7 +67,7 @@
           (
             (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
               # This is ~safe because we require PrivateTmp to be true.
-              destination = "/tmp/detsys-vault/${name}";
+              destination = "${secretFilesRoot}${name}";
               inherit perms;
             } //
             (

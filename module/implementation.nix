@@ -80,11 +80,11 @@ let
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
+        ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPre = precreateTemplateFiles serviceName (agentConfig.secretFiles ++ agentConfig.environmentFiles)
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
-        ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
         ExecStartPost = waitFor serviceName
           (map (path: { prefix = environmentFilesRoot; inherit path; }) agentConfig.environmentFiles
             ++ map (path: { prefix = secretFilesRoot; inherit path; }) agentConfig.secretFiles);

@@ -31,7 +31,7 @@ let
             ]))
           ];
 
-          unitConfig.Type = "oneshot";
+          serviceConfig.Type = "oneshot";
 
           script = ''
             set -eux
@@ -91,7 +91,6 @@ in
       print(machine.succeed("sleep 1; ls /run/keys/environment"))
       print(machine.succeed("sleep 1; cat /run/keys/environment/EnvFile"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep 30"))
     '';
 
   secretFile = mkTest
@@ -148,7 +147,6 @@ in
       print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep 30"))
     '';
 
   secretFileSlow = mkTest
@@ -201,7 +199,6 @@ in
       print(machine.succeed("sleep 1; ls /tmp"))
       print(machine.succeed("sleep 1; systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/slow"))
       print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
-      print(machine.succeed("sleep 30"))
     '';
 
   prometheus = mkTest

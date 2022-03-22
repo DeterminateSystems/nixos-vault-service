@@ -7,6 +7,9 @@ let
 
   precreateTemplateFiles = serviceName: files: { user ? null, group ? null }:
     let
+      user' = lib.escapeShellArg (toString user);
+      group' = lib.escapeShellArg (toString group);
+
       create = lib.concatMapStringsSep "\n"
         (file:
           let
@@ -16,10 +19,10 @@ let
             (
               umask 027
               mkdir -p "$(dirname ${dest})"
-              chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} "$(dirname ${dest})"
+              chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} "$(dirname ${dest})"
               umask 777
               touch ${dest}
-              chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
+              chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} ${dest}
             )
           '')
         files;
@@ -75,7 +78,7 @@ let
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
-        ExecStartPre = precreateTemplateFiles serviceName agentConfig.secretFiles
+        ExecStartPre = precreateTemplateFiles serviceName (agentConfig.secretFiles ++ agentConfig.environmentFiles)
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });

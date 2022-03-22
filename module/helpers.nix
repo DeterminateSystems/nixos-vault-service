@@ -1,5 +1,8 @@
 { lib }:
 {
+  secretFilesRoot = "/tmp/detsys-vault/";
+  environmentFilesRoot = "/run/keys/environment/";
+
   mkScopedMerge = attrs:
     let
       pluckFunc = attr: values: lib.mkMerge
@@ -45,14 +48,16 @@
             (mkCommandAttrset cfg.environment.changeAction) // {
               destination = "/run/keys/environment/EnvFile";
               contents = cfg.environment.template;
+              inherit (cfg.environment) perms;
             }
           ))
         ++ (lib.mapAttrsToList
-          (name: { file }:
+          (name: { file, perms }:
             (
               (mkCommandAttrset cfg.environment.changeAction) // {
                 destination = "/run/keys/environment/${name}.EnvFile";
                 source = file;
+                inherit perms;
               }
             ))
           cfg.environment.templateFiles);

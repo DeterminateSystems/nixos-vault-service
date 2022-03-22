@@ -16,11 +16,11 @@ If the user manually start, restarts, or stops the target service, the agent sid
 ### Where do the files go?
 
 > **NOTE:** Currently, we use the systemd `PrivateTmp` directive, which interacts with `JoinsNamespaceOf` in a documented fashion.
-> It is unknown at this time whether `TemporaryFileSystem` exhibits the same functionality (namely, sharing of mountpoints between services) when used in conjunction with `JoinsNamespaceOf`. 
+> It is unknown at this time whether `TemporaryFileSystem` exhibits the same functionality (namely, sharing of mountpoints between services) when used in conjunction with `JoinsNamespaceOf`.
 
 We'll create a temporary filesystem in the sidecar using the `TemporaryFileSystem` at `/run/detsys/vaultAgent`.
 All generated, secret files will go there.
-This temporary filessytem will be shared with the target service via the `JoinsNamespaceOf` directive..
+This temporary filessytem will be shared with the target service via the `JoinsNamespaceOf` directive.
 
 ## Example Nix Interface
 
@@ -71,10 +71,19 @@ This temporary filessytem will be shared with the target service via the `JoinsN
         #  * none
         defaultChangeAction = "...";
 
+        # This file will be accessible at `/tmp/detsys-vault/webserver.cert` by
+        # any units in the namespace of `detsys-vaultAgent-service-name.service`
+        # via the JoinsNamespaceOf= systemd directive.
         files."webserver.cert" = {
             # What to do if this *specific* file changes content.
             # Defaults to the secretFiles.defaultChangeAction, and any of those values are valid here too.
             changeAction = "reload";
+
+            # The octal mode of the created secret file (as a string).
+            # Defaults to 0400.
+            # NOTE: The owner and group of the file are set based on the
+            # infected service's User= and Group= systemd directives.
+            perms = "0400";
 
             # Either use an external file as the template:
             templateFile = ./example.ctmpl;
@@ -226,5 +235,4 @@ systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p Private
 # Known Issues
 
 * the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
-* there is no way to set the permissions of secret files
 * there is no way to get the file path of the secret file, so you have to "just know" where it will be

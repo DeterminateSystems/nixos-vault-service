@@ -75,6 +75,7 @@ with
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
             {{ end }}
           '';
+          perms = "0400";
         }
       ];
     };
@@ -89,6 +90,7 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -106,6 +108,7 @@ with
           command = "systemctl stop 'example.service'";
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -122,6 +125,7 @@ with
         {
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -139,11 +143,13 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}example-b.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -153,6 +159,7 @@ with
       environment = {
         template = "FOO=BAR";
         templateFiles."example-a".file = ./helpers.tests.nix;
+        perms = "0600";
       };
     }
     {
@@ -161,11 +168,13 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}EnvFile";
           contents = "FOO=BAR";
+          perms = "0600";
         }
         {
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };

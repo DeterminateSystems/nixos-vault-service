@@ -3,7 +3,9 @@ let
   helpers = import ./helpers.nix { inherit lib; };
   inherit (helpers)
     mkScopedMerge
-    renderAgentConfig;
+    renderAgentConfig
+    secretFilesRoot
+    environmentFilesRoot;
 
   precreateTemplateFiles = serviceName: files: { user ? null, group ? null }:
     let
@@ -41,11 +43,12 @@ let
             # accepts POSIX regex. Attempting to watch for "some.secret" would
             # match "some.secret", "some0secret", "someasecret", etc., which is
             # not ideal.
-            file' = lib.removePrefix "/tmp/detsys-vault/" (lib.escapeShellArg (lib.escapeRegex file));
+            file' = lib.removePrefix file.prefix (lib.escapeShellArg (lib.escapeRegex file.path));
           in
           ''
-            if [ ! -f ${lib.escapeShellArg file} ]; then
-              ${pkgs.inotify-tools}/bin/inotifywait --quiet --event close_write --include ${file'} /tmp/detsys-vault &
+            if [ ! -f ${lib.escapeShellArg file.path} ]; then
+              echo Waiting for ${lib.escapeShellArg file.path} to exist...
+              ${pkgs.inotify-tools}/bin/inotifywait --quiet --event close_write --include ${file'} ${file.prefix} &
             fi
           '')
         files;
@@ -83,7 +86,9 @@ let
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
-        ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
+        ExecStartPost = waitFor serviceName
+          (map (path: { prefix = environmentFilesRoot; inherit path; }) agentConfig.environmentFiles
+            ++ map (path: { prefix = secretFilesRoot; inherit path; }) agentConfig.secretFiles);
       };
 
     };

@@ -55,7 +55,6 @@ let
     in
     pkgs.writeShellScript "wait-for-${serviceName}" ''
       set -eux
-      [ ! -d /tmp/detsys-vault ] && ${pkgs.inotify-tools}/bin/inotifywait --quiet --event create --include 'detsys-vault' /tmp
       ${waiter}
       wait
     '';

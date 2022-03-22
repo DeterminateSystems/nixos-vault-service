@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  terraform:
+  Terraform:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -53,7 +53,7 @@ jobs:
       - name: Shellcheck ./scripts/
         run: nix-shell --run 'shellcheck $(git ls-files | grep "\.sh$")'
 
-  DefinitionTests:
+  NixTests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -61,7 +61,16 @@ jobs:
           fetch-depth: 0
       - name: Install Nix
         uses: cachix/install-nix-action@v13
-      - name: Evaluation cases of the module's definition
+      - name: Evaluation cases of the definition
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
       - name: Evaluation cases of the helpers
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers
+      # TODO: test the implementation tests once we figure out why basicEnvironment doesn't exit
+
+  EditorConfig:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: greut/eclint-action@v0

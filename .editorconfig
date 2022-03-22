@@ -50,3 +50,5 @@ trim_trailing_whitespace = unset
 [*.lock]
 indent_size = unset
 
+[*.ctmpl]
+insert_final_newline = unset

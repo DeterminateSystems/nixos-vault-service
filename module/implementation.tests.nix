@@ -9,70 +9,61 @@ let
           ./implementation.nix
           config
         ];
+
+        environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
+        environment.systemPackages = [ pkgs.vault pkgs.getent ];
+
+        systemd.services.vault = {
+          wantedBy = [ "default.target" ];
+          path = [ pkgs.glibc ];
+          script = ''
+            ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
+          '';
+        };
+
+        systemd.services.setup-vault = {
+          wantedBy = [ "default.target" ];
+          after = [ "vault.service" ];
+          path = [
+            (pkgs.terraform_1.withPlugins (tf: [
+              tf.local
+              tf.vault
+            ]))
+          ];
+
+          unitConfig.Type = "oneshot";
+
+          script = ''
+            set -eux
+
+            cd /
+            mkdir -p terraform
+            cd terraform
+
+            cp -r ${../terraform}/* ./
+            terraform init
+            terraform apply -auto-approve
+          '';
+        };
       };
     };
 in
 {
   basicEnvironment = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (
-            (pkgs.terraform_1.withPlugins (tf: [
-              tf.local
-              tf.vault
-            ]))
-          )
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       detsys.systemd.services.example.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [
-            {
-              method = [
-                {
-                  config = [
-                    {
-                      remove_secret_id_file_after_reading = false;
-                      role_id_file_path = "/role_id";
-                      secret_id_file_path = "/secret_id";
-                    }
-                  ];
-                  type = "approle";
-                }
-              ];
-            }
-          ];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
           template_config = [{
             static_secret_render_interval = "5s";
           }];
@@ -93,7 +84,6 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
       print(machine.succeed("sleep 5; journalctl -u setup-vault"))
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
@@ -106,64 +96,19 @@ in
 
   secretFile = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (
-            (pkgs.terraform_1.withPlugins (tf: [
-              tf.local
-              tf.vault
-            ]))
-          )
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       detsys.systemd.services.example.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [
-            {
-              method = [
-                {
-                  config = [
-                    {
-                      remove_secret_id_file_after_reading = false;
-                      role_id_file_path = "/role_id";
-                      secret_id_file_path = "/secret_id";
-                    }
-                  ];
-                  type = "approle";
-                }
-              ];
-            }
-          ];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
           template_config = [{
             static_secret_render_interval = "5s";
           }];
@@ -195,7 +140,6 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
       print(machine.succeed("sleep 5; journalctl -u setup-vault"))
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
@@ -209,64 +153,19 @@ in
 
   secretFileSlow = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (
-            (pkgs.terraform_1.withPlugins (tf: [
-              tf.local
-              tf.vault
-            ]))
-          )
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       detsys.systemd.services.example.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [
-            {
-              method = [
-                {
-                  config = [
-                    {
-                      remove_secret_id_file_after_reading = false;
-                      role_id_file_path = "/role_id";
-                      secret_id_file_path = "/secret_id";
-                    }
-                  ];
-                  type = "approle";
-                }
-              ];
-            }
-          ];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
           template_config = [{
             static_secret_render_interval = "5s";
           }];
@@ -295,7 +194,6 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
       print(machine.succeed("sleep 5; journalctl -u setup-vault"))
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
@@ -308,43 +206,6 @@ in
 
   prometheus = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (pkgs.terraform_1.withPlugins (tf: [
-            tf.local
-            tf.vault
-          ]))
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       services.nginx = {
         enable = true;
         virtualHosts."localhost" = {
@@ -356,22 +217,16 @@ in
       detsys.systemd.services.nginx.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [
-            {
-              method = [
-                {
-                  config = [
-                    {
-                      remove_secret_id_file_after_reading = false;
-                      role_id_file_path = "/role_id";
-                      secret_id_file_path = "/secret_id";
-                    }
-                  ];
-                  type = "approle";
-                }
-              ];
-            }
-          ];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
           template_config = [{
             static_secret_render_interval = "5s";
           }];
@@ -388,7 +243,6 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
       machine.start_job("nginx")
       machine.wait_for_job("detsys-vaultAgent-nginx")
       machine.succeed("sleep 5")
@@ -402,44 +256,6 @@ in
 
   token = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-      environment.systemPackages = [ pkgs.vault pkgs.getent ];
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (pkgs.terraform_1.withPlugins (tf: [
-            tf.local
-            tf.vault
-          ]))
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       systemd.services.example.script = ''
         echo Vault token with special perms is:
         cat /tmp/detsys-vault/token
@@ -470,7 +286,6 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
       machine.wait_for_open_port(8200)
@@ -489,43 +304,6 @@ in
 
   perms = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (pkgs.terraform_1.withPlugins (tf: [
-            tf.local
-            tf.vault
-          ]))
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       detsys.systemd.services.example.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
@@ -598,45 +376,6 @@ in
 
   multiEnvironment = mkTest
     ({ pkgs, ... }: {
-      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
-
-      systemd.services.vault = {
-        wantedBy = [ "default.target" ];
-        path = [ pkgs.glibc ];
-        script = ''
-          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
-        '';
-      };
-
-      systemd.services.setup-vault = {
-        wantedBy = [ "default.target" ];
-        after = [ "vault.service" ];
-        path = [
-          (
-            (pkgs.terraform_1.withPlugins (tf: [
-              tf.local
-              tf.vault
-            ]))
-          )
-        ];
-
-        unitConfig.Type = "oneshot";
-
-        script = ''
-          set -eux
-
-          cd /
-          mkdir -p terraform
-          cd terraform
-
-          cp -r ${../terraform}/* ./
-          terraform init
-          terraform apply -auto-approve
-
-          ls /
-        '';
-      };
-
       detsys.systemd.services.example.vaultAgent = {
         extraConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];

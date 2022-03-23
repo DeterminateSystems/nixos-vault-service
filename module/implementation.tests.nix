@@ -594,4 +594,96 @@ in
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /run/keys/environment/EnvFile"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /run/keys/environment/EnvFile"))
     '';
+
+  multiEnvironment = mkTest
+    ({ pkgs, ... }: {
+      environment.variables.VAULT_ADDR = "http://127.0.0.1:8200";
+
+      systemd.services.vault = {
+        wantedBy = [ "default.target" ];
+        path = [ pkgs.glibc ];
+        script = ''
+          ${pkgs.vault}/bin/vault server -dev -dev-root-token-id=abc123
+        '';
+      };
+
+      systemd.services.setup-vault = {
+        wantedBy = [ "default.target" ];
+        after = [ "vault.service" ];
+        path = [
+          (
+            (pkgs.terraform_1.withPlugins (tf: [
+              tf.local
+              tf.vault
+            ]))
+          )
+        ];
+
+        unitConfig.Type = "oneshot";
+
+        script = ''
+          set -eux
+
+          cd /
+          mkdir -p terraform
+          cd terraform
+
+          cp -r ${../terraform}/* ./
+          terraform init
+          terraform apply -auto-approve
+
+          ls /
+        '';
+      };
+
+      detsys.systemd.services.example.vaultAgent = {
+        extraConfig = {
+          vault = [{ address = "http://127.0.0.1:8200"; }];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
+          template_config = [{
+            static_secret_render_interval = "5s";
+          }];
+        };
+
+        environment.template = ''
+          {{ with secret "sys/tools/random/1" "format=base64" }}
+          MY_SECRET_0={{ .Data.random_bytes }}
+          {{ end }}
+        '';
+        environment.templateFiles = {
+          "a".file = pkgs.writeText "a" ''
+            {{ with secret "sys/tools/random/2" "format=base64" }}
+            MY_SECRET_A={{ .Data.random_bytes }}
+            {{ end }}
+          '';
+          "b".file = pkgs.writeText "b" ''
+            {{ with secret "sys/tools/random/3" "format=base64" }}
+            MY_SECRET_B={{ .Data.random_bytes }}
+            {{ end }}
+          '';
+        };
+      };
+      systemd.services.example = {
+        script = ''
+          echo My 0 secret is $MY_SECRET_0
+          echo My a secret is $MY_SECRET_A
+          echo My b secret is $MY_SECRET_B
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_file("/role_id")
+      machine.start_job("example")
+      machine.wait_for_job("detsys-vaultAgent-example")
+    '';
 }

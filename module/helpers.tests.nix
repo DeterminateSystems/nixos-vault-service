@@ -160,7 +160,6 @@ with
       environment = {
         template = "FOO=BAR";
         templateFiles."example-a".file = ./helpers.tests.nix;
-        perms = "0600";
       };
     }
     {
@@ -169,7 +168,7 @@ with
           command = "systemctl try-restart 'example.service'";
           destination = "${helpers.environmentFilesRoot}EnvFile";
           contents = "FOO=BAR";
-          perms = "0600";
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";

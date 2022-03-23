@@ -41,21 +41,10 @@ This temporary filessytem will be shared with the target service via the `JoinsN
         # cannot be reloaded.
         changeAction = "restart";
 
-        # The octal mode of /run/keys/environment/EnvFile.
-        # Defaults to 0400.
-        # NOTE: The owner and group of the file are set based on the
-        # infected service's User= and Group= systemd directives.
-        perms = "0400";
-
         templateFiles = {
             # An EnvironmentFile is created for each section here.
             "file-section" = {
                 file = ./example.ctmpl;
-                # The octal mode of /run/keys/environment/file-section.EnvFile.
-                # Defaults to 0400.
-                # NOTE: The owner and group of the file are set based on the
-                # infected service's User= and Group= systemd directives.
-                perms = "0400";
             };
         };
 

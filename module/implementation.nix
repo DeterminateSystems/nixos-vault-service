@@ -9,8 +9,8 @@ let
 
   precreateDirectories = serviceName: { user ? null, group ? null }:
     let
-      user' = lib.escapeShellArg (toString user);
-      group' = lib.escapeShellArg (toString group);
+      userEscaped = lib.escapeShellArg (toString user);
+      groupEscaped = lib.escapeShellArg (toString group);
     in
     pkgs.writeShellScript "precreate-dirs-for-${serviceName}" ''
       set -eux
@@ -19,7 +19,7 @@ let
         mkdir -p ${environmentFilesRoot}
 
         mkdir -p ${secretFilesRoot}
-        chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} ${secretFilesRoot}
+        chown ${lib.optionalString (user != null) userEscaped}:${lib.optionalString (group != null) groupEscaped} ${secretFilesRoot}
       )
     '';
 

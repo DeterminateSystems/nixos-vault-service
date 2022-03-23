@@ -36,28 +36,33 @@ rec {
         in
         if requestedAction == "none"
         then
-          ""
+          null
         else
           "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
 
       environmentFileTemplates =
+        let
+          changeCommand = mkCommand cfg.environment.changeAction;
+        in
         (lib.optional (cfg.environment.template != null)
           (
             {
-              command = mkCommand cfg.environment.changeAction;
               destination = "${environmentFilesRoot}EnvFile";
               contents = cfg.environment.template;
               inherit (cfg.environment) perms;
+            } // lib.optionalAttrs (changeCommand != null) {
+              command = changeCommand;
             }
           ))
         ++ (lib.mapAttrsToList
           (name: { file, perms }:
             (
               {
-                command = mkCommand cfg.environment.changeAction;
                 destination = "${environmentFilesRoot}${name}.EnvFile";
                 source = file;
                 inherit perms;
+              } // lib.optionalAttrs (changeCommand != null) {
+                command = changeCommand;
               }
             ))
           cfg.environment.templateFiles);
@@ -67,15 +72,18 @@ rec {
           rec {
             command =
               let
-                user = targetServiceConfig.serviceConfig.User or "";
-                group = targetServiceConfig.serviceConfig.Group or "";
+                user = targetServiceConfig.serviceConfig.User or null;
+                group = targetServiceConfig.serviceConfig.Group or null;
                 escapedUser = lib.escapeShellArg user;
                 escapedGroup = lib.escapeShellArg group;
+                changeCommand = mkCommand (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction);
               in
-              builtins.concatStringsSep ";" [
-                "chown ${escapedUser}:${escapedGroup} ${destination}"
-                (mkCommand (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction))
-              ];
+              builtins.concatStringsSep ";"
+                ([
+                  "chown ${lib.optionalString (user != null) escapedUser}:${lib.optionalString (group!= null) escapedGroup} ${destination}"
+                ] ++ lib.optionals (changeCommand != null) [
+                  changeCommand
+                ]);
             # This is ~safe because we require PrivateTmp to be true.
             destination = "${secretFilesRoot}${name}";
             inherit perms;

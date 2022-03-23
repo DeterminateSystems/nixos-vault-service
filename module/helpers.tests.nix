@@ -187,7 +187,7 @@ with
     {
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example;systemctl try-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example";
           contents = "FOO=BAR";
           perms = "0400";
@@ -202,7 +202,7 @@ with
     {
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example;systemctl try-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example";
           source = ./helpers.tests.nix;
           perms = "0400";
@@ -220,7 +220,7 @@ with
     {
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example;systemctl try-reload-or-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example";
           contents = "FOO=BAR";
           perms = "0400";
@@ -243,13 +243,13 @@ with
     {
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example-a;systemctl try-reload-or-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example-b;systemctl try-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example-b";
           contents = "FOO=BAR";
           perms = "0600";
@@ -308,13 +308,13 @@ with
       ];
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example-a;systemctl try-reload-or-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
+          command = "chown '':'' ${helpers.secretFilesRoot}example-b;systemctl try-restart 'example.service'";
           destination = "${helpers.secretFilesRoot}example-b";
           contents = "FOO=BAR";
           perms = "0700";

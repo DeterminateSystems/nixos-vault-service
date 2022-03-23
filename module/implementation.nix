@@ -7,48 +7,30 @@ let
     secretFilesRoot
     environmentFilesRoot;
 
-  precreateTemplateFiles = serviceName: files: { user ? null, group ? null }:
+  precreateDirectories = serviceName: { user ? null, group ? null }:
     let
       user' = lib.escapeShellArg (toString user);
       group' = lib.escapeShellArg (toString group);
-
-      create = lib.concatMapStringsSep "\n"
-        (file:
-          let
-            dest = lib.escapeShellArg file;
-          in
-          ''
-            (
-              umask 027
-              mkdir -p "$(dirname ${dest})"
-              chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} "$(dirname ${dest})"
-              umask 777
-              touch ${dest}
-              chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} ${dest}
-            )
-          '')
-        files;
     in
-    pkgs.writeShellScript "precreate-files-for-${serviceName}" ''
+    pkgs.writeShellScript "precreate-dirs-for-${serviceName}" ''
       set -eux
-      ${create}
+      (
+        umask 027
+        mkdir -p ${environmentFilesRoot}
+
+        mkdir -p ${secretFilesRoot}
+        chown ${lib.optionalString (user != null) user'}:${lib.optionalString (group != null) group'} ${secretFilesRoot}
+      )
     '';
 
   waitFor = serviceName: files:
     let
       waiter = lib.concatMapStringsSep "\n"
         (file:
-          let
-            # NOTE: We `escapeRegex` because inotifywait's `--include` flag
-            # accepts POSIX regex. Attempting to watch for "some.secret" would
-            # match "some.secret", "some0secret", "someasecret", etc., which is
-            # not ideal.
-            file' = lib.removePrefix file.prefix (lib.escapeShellArg (lib.escapeRegex file.path));
-          in
           ''
-            if [ ! -f ${lib.escapeShellArg file.path} ]; then
-              echo Waiting for ${lib.escapeShellArg file.path} to exist...
-              ${pkgs.inotify-tools}/bin/inotifywait --quiet --event close_write --include ${file'} ${file.prefix} &
+            if [ ! -f ${lib.escapeShellArg file.destination} ]; then
+              echo Waiting for ${lib.escapeShellArg file.destination} to exist...
+              (while [ ! -f ${lib.escapeShellArg file.destination} ]; do sleep 1; done) &
             fi
           '')
         files;
@@ -58,6 +40,7 @@ let
       ${waiter}
       wait
     '';
+
 
   makeAgentService = { serviceName, agentConfig, systemdUnitConfig }:
     let
@@ -81,13 +64,13 @@ let
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
         ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
-        ExecStartPre = precreateTemplateFiles serviceName (agentConfig.secretFiles ++ agentConfig.environmentFiles)
+        ExecStartPre = precreateDirectories serviceName
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
         ExecStartPost = waitFor serviceName
-          (map (path: { prefix = environmentFilesRoot; inherit path; }) agentConfig.environmentFiles
-            ++ map (path: { prefix = secretFilesRoot; inherit path; }) agentConfig.secretFiles);
+          (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
+            ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
       };
 
     };
@@ -117,7 +100,7 @@ in
       (lib.mapAttrsToList
         (serviceName: serviceConfig:
           let
-            agentConfig = renderAgentConfig serviceName serviceConfig.vaultAgent;
+            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig.vaultAgent;
           in
           {
             systemd.services = {

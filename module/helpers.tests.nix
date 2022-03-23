@@ -36,7 +36,7 @@ with
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.services.example.vaultAgent).agentConfig;
+        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.systemd.services.example.vaultAgent).agentConfig;
       in
       if !result.success
       then
@@ -123,6 +123,7 @@ with
     {
       template = [
         {
+          command = "";
           destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";

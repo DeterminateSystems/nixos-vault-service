@@ -539,9 +539,6 @@ in
               }];
             }];
           }];
-          template_config = [{
-            static_secret_render_interval = "5s";
-          }];
         };
 
         environment.template = ''
@@ -568,7 +565,13 @@ in
         };
       };
 
+      services.nginx.enable = true;
+
       systemd.services.example = {
+        serviceConfig = {
+          User = "nginx";
+          Group = "nginx";
+        };
         script = ''
           cat /tmp/detsys-vault/rand_bytes
           cat /tmp/detsys-vault/rand_bytes-v2
@@ -578,12 +581,11 @@ in
       };
     })
     ''
-      machine.wait_for_job("setup-vault")
-      machine.succeed("sleep 5")
+      machine.wait_for_file("/role_id")
       machine.start_job("example")
+      machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes-v2"))
-      machine.wait_for_job("detsys-vaultAgent-example")
       machine.succeed("sleep 1")
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes"))

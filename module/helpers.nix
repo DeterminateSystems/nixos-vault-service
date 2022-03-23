@@ -24,9 +24,9 @@ rec {
     values:
     pluckFuncs attrs values;
 
-  renderAgentConfig = targetService: cfg:
+  renderAgentConfig = targetService: targetServiceConfig: cfg:
     let
-      mkCommandAttrset = requestedAction:
+      mkCommand = requestedAction:
         let
           restartAction = {
             restart = "try-restart";
@@ -36,16 +36,15 @@ rec {
         in
         if requestedAction == "none"
         then
-          { }
+          ""
         else
-          {
-            command = "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
-          };
+          "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
 
       environmentFileTemplates =
         (lib.optional (cfg.environment.template != null)
           (
-            (mkCommandAttrset cfg.environment.changeAction) // {
+            {
+              command = mkCommand cfg.environment.changeAction;
               destination = "${environmentFilesRoot}EnvFile";
               contents = cfg.environment.template;
               inherit (cfg.environment) perms;
@@ -54,7 +53,8 @@ rec {
         ++ (lib.mapAttrsToList
           (name: { file, perms }:
             (
-              (mkCommandAttrset cfg.environment.changeAction) // {
+              {
+                command = mkCommand cfg.environment.changeAction;
                 destination = "${environmentFilesRoot}${name}.EnvFile";
                 source = file;
                 inherit perms;
@@ -64,27 +64,42 @@ rec {
 
       secretFileTemplates = lib.mapAttrsToList
         (name: { changeAction, templateFile, template, perms }:
+          rec {
+            command =
+              let
+                user = targetServiceConfig.serviceConfig.User or "";
+                group = targetServiceConfig.serviceConfig.Group or "";
+                escapedUser = lib.escapeShellArg user;
+                escapedGroup = lib.escapeShellArg group;
+              in
+              builtins.concatStringsSep ";" [
+                "chown ${escapedUser}:${escapedGroup} ${destination}"
+                (mkCommand (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction))
+              ];
+            # This is ~safe because we require PrivateTmp to be true.
+            destination = "${secretFilesRoot}${name}";
+            inherit perms;
+          } //
           (
-            (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
-              # This is ~safe because we require PrivateTmp to be true.
-              destination = "${secretFilesRoot}${name}";
-              inherit perms;
-            } //
-            (
-              if template != null
-              then {
-                contents = template;
-              }
-              else if templateFile != null
-              then {
-                source = templateFile;
-              }
-              else throw ""
-            )
-          ))
+            if template != null
+            then {
+              contents = template;
+            }
+            else if templateFile != null
+            then {
+              source = templateFile;
+            }
+            else throw ""
+          )
+        )
         cfg.secretFiles.files;
     in
     {
+      inherit
+        environmentFileTemplates
+        secretFileTemplates
+        ;
+
       environmentFiles = builtins.map
         (tpl: tpl.destination)
         environmentFileTemplates;

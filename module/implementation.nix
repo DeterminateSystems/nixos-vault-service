@@ -62,6 +62,7 @@ let
 
       unitConfig = {
         # BindsTo = [ fullServiceName ];
+        # FIXME: make more easily tunable
         StartLimitIntervalSec = 200;
         StartLimitBurst = 6;
       };
@@ -77,6 +78,7 @@ let
           (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
             ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
 
+        # FIXME: make more easily tunable
         Restart = "on-failure";
         RestartSec = 5;
       };

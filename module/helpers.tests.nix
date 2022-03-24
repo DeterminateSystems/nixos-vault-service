@@ -36,7 +36,7 @@ with
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" result.value.detsys.systemd.services.example.vaultAgent).agentConfig;
+        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.systemd.services.example.vaultAgent).agentConfig;
       in
       if !result.success
       then
@@ -69,12 +69,13 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/EnvFile";
+          destination = "${helpers.environmentFilesRoot}EnvFile";
           contents = ''
             {{ with secret "postgresql/creds/hydra" }}
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
             {{ end }}
           '';
+          perms = "0400";
         }
       ];
     };
@@ -87,8 +88,9 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -104,8 +106,9 @@ with
       template = [
         {
           command = "systemctl stop 'example.service'";
-          destination = "/run/keys/environment/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -120,8 +123,9 @@ with
     {
       template = [
         {
-          destination = "/run/keys/environment/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -137,13 +141,15 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/example-b.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-b.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -159,13 +165,15 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/EnvFile";
+          destination = "${helpers.environmentFilesRoot}EnvFile";
           contents = "FOO=BAR";
+          perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "/run/keys/environment/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
           source = ./helpers.tests.nix;
+          perms = "0400";
         }
       ];
     };
@@ -177,8 +185,8 @@ with
     {
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example";
+          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example";
           contents = "FOO=BAR";
           perms = "0400";
         }
@@ -192,8 +200,8 @@ with
     {
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example";
+          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -210,8 +218,8 @@ with
     {
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example";
+          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-reload-or-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example";
           contents = "FOO=BAR";
           perms = "0400";
         }
@@ -233,14 +241,14 @@ with
     {
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example-a";
+          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example-b";
+          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-b";
           contents = "FOO=BAR";
           perms = "0600";
         }
@@ -298,14 +306,14 @@ with
       ];
       template = [
         {
-          command = "systemctl try-reload-or-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example-a";
+          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "/tmp/detsys-vault/example-b";
+          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-b";
           contents = "FOO=BAR";
           perms = "0700";
         }

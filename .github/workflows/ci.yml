@@ -66,7 +66,8 @@ jobs:
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
       - name: Evaluation cases of the helpers
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers
-      # TODO: test the implementation tests once we figure out why basicEnvironment doesn't exit
+      # NOTE: we can't add the implementation tests to CI because of the lack of KVM:
+      #   error: a 'x86_64-linux' with features {kvm, nixos-test} is required to build '/nix/store/5cy5k2lgcfc9apjf3icj74l53bxxf8b0-vm-test-run-unnamed.drv', but I am a 'x86_64-linux' with features {benchmark, big-parallel, nixos-test}
 
   EditorConfig:
     runs-on: ubuntu-latest

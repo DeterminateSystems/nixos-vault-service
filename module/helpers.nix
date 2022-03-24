@@ -1,5 +1,8 @@
 { lib }:
-{
+rec {
+  secretFilesRoot = "/tmp/detsys-vault/";
+  environmentFilesRoot = "/run/keys/environment/";
+
   mkScopedMerge = attrs:
     let
       pluckFunc = attr: values: lib.mkMerge
@@ -21,9 +24,9 @@
     values:
     pluckFuncs attrs values;
 
-  renderAgentConfig = targetService: cfg:
+  renderAgentConfig = targetService: targetServiceConfig: cfg:
     let
-      mkCommandAttrset = requestedAction:
+      mkCommand = requestedAction:
         let
           restartAction = {
             restart = "try-restart";
@@ -33,53 +36,78 @@
         in
         if requestedAction == "none"
         then
-          { }
+          null
         else
-          {
-            command = "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
-          };
+          "systemctl ${restartAction} ${lib.escapeShellArg "${targetService}.service"}";
 
       environmentFileTemplates =
+        let
+          changeCommand = mkCommand cfg.environment.changeAction;
+        in
         (lib.optional (cfg.environment.template != null)
           (
-            (mkCommandAttrset cfg.environment.changeAction) // {
-              destination = "/run/keys/environment/EnvFile";
+            {
+              destination = "${environmentFilesRoot}EnvFile";
               contents = cfg.environment.template;
+              inherit (cfg.environment) perms;
+            } // lib.optionalAttrs (changeCommand != null) {
+              command = changeCommand;
             }
           ))
         ++ (lib.mapAttrsToList
-          (name: { file }:
+          (name: { file, perms }:
             (
-              (mkCommandAttrset cfg.environment.changeAction) // {
-                destination = "/run/keys/environment/${name}.EnvFile";
+              {
+                destination = "${environmentFilesRoot}${name}.EnvFile";
                 source = file;
+                inherit perms;
+              } // lib.optionalAttrs (changeCommand != null) {
+                command = changeCommand;
               }
             ))
           cfg.environment.templateFiles);
 
       secretFileTemplates = lib.mapAttrsToList
         (name: { changeAction, templateFile, template, perms }:
+          rec {
+            command =
+              let
+                user = targetServiceConfig.serviceConfig.User or null;
+                group = targetServiceConfig.serviceConfig.Group or null;
+                escapedUser = lib.escapeShellArg user;
+                escapedGroup = lib.escapeShellArg group;
+                changeCommand = mkCommand (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction);
+              in
+              builtins.concatStringsSep ";"
+                ([
+                  "chown ${lib.optionalString (user != null) escapedUser}:${lib.optionalString (group!= null) escapedGroup} ${lib.escapeShellArg destination}"
+                ] ++ lib.optionals (changeCommand != null) [
+                  changeCommand
+                ]);
+            # This is ~safe because we require PrivateTmp to be true.
+            destination = "${secretFilesRoot}${name}";
+            inherit perms;
+          } //
           (
-            (mkCommandAttrset (if changeAction != null then changeAction else cfg.secretFiles.defaultChangeAction)) // {
-              # This is ~safe because we require PrivateTmp to be true.
-              destination = "/tmp/detsys-vault/${name}";
-              inherit perms;
-            } //
-            (
-              if template != null
-              then {
-                contents = template;
-              }
-              else if templateFile != null
-              then {
-                source = templateFile;
-              }
-              else throw ""
-            )
-          ))
+            if template != null
+            then {
+              contents = template;
+            }
+            else if templateFile != null
+            then {
+              source = templateFile;
+            }
+            else throw ""
+          )
+        )
         cfg.secretFiles.files;
     in
     {
+      inherit
+        environmentFileTemplates
+        secretFileTemplates
+        ;
+
       environmentFiles = builtins.map
         (tpl: tpl.destination)
         environmentFileTemplates;

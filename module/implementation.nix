@@ -3,56 +3,44 @@ let
   helpers = import ./helpers.nix { inherit lib; };
   inherit (helpers)
     mkScopedMerge
-    renderAgentConfig;
+    renderAgentConfig
+    secretFilesRoot
+    environmentFilesRoot;
 
-  precreateTemplateFiles = serviceName: files: { user ? null, group ? null }:
+  precreateDirectories = serviceName: { user ? null, group ? null }:
     let
-      create = lib.concatMapStringsSep "\n"
-        (file:
-          let
-            dest = lib.escapeShellArg file;
-          in
-          ''
-            (
-              umask 027
-              mkdir -p "$(dirname ${dest})"
-              chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} "$(dirname ${dest})"
-              umask 777
-              touch ${dest}
-              chown ${lib.optionalString (user != null) (lib.escapeShellArg (toString user))}:${lib.optionalString (group != null) (lib.escapeShellArg (toString group))} ${dest}
-            )
-          '')
-        files;
+      userEscaped = lib.escapeShellArg (toString user);
+      groupEscaped = lib.escapeShellArg (toString group);
     in
-    pkgs.writeShellScript "precreate-files-for-${serviceName}" ''
+    pkgs.writeShellScript "precreate-dirs-for-${serviceName}" ''
       set -eux
-      ${create}
+      (
+        umask 027
+        mkdir -p ${environmentFilesRoot}
+
+        mkdir -p ${secretFilesRoot}
+        chown ${lib.optionalString (user != null) userEscaped}:${lib.optionalString (group != null) groupEscaped} ${secretFilesRoot}
+      )
     '';
 
   waitFor = serviceName: files:
     let
       waiter = lib.concatMapStringsSep "\n"
         (file:
-          let
-            # NOTE: We `escapeRegex` because inotifywait's `--include` flag
-            # accepts POSIX regex. Attempting to watch for "some.secret" would
-            # match "some.secret", "some0secret", "someasecret", etc., which is
-            # not ideal.
-            file' = lib.removePrefix "/tmp/detsys-vault/" (lib.escapeShellArg (lib.escapeRegex file));
-          in
           ''
-            if [ ! -f ${lib.escapeShellArg file} ]; then
-              ${pkgs.inotify-tools}/bin/inotifywait --quiet --event close_write --include ${file'} /tmp/detsys-vault &
+            if [ ! -f ${lib.escapeShellArg file.destination} ]; then
+              echo Waiting for ${lib.escapeShellArg file.destination} to exist...
+              (while [ ! -f ${lib.escapeShellArg file.destination} ]; do sleep 1; done) &
             fi
           '')
         files;
     in
     pkgs.writeShellScript "wait-for-${serviceName}" ''
       set -eux
-      [ ! -d /tmp/detsys-vault ] && ${pkgs.inotify-tools}/bin/inotifywait --quiet --event create --include 'detsys-vault' /tmp
       ${waiter}
       wait
     '';
+
 
   makeAgentService = { serviceName, agentConfig, systemdUnitConfig }:
     let
@@ -75,12 +63,14 @@ let
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
-        ExecStartPre = precreateTemplateFiles serviceName agentConfig.secretFiles
+        ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
+        ExecStartPre = precreateDirectories serviceName
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
-        ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
-        ExecStartPost = waitFor serviceName (agentConfig.environmentFiles ++ agentConfig.secretFiles);
+        ExecStartPost = waitFor serviceName
+          (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
+            ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
       };
 
     };
@@ -110,7 +100,7 @@ in
       (lib.mapAttrsToList
         (serviceName: serviceConfig:
           let
-            agentConfig = renderAgentConfig serviceName serviceConfig.vaultAgent;
+            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig.vaultAgent;
           in
           {
             systemd.services = {

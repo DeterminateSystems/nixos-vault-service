@@ -43,6 +43,14 @@ let
           type = types.nullOr types.lines;
           default = null;
         };
+
+        perms = mkOption {
+          readOnly = true;
+          internal = true;
+          description = "The octal mode of the environment file as a string.";
+          type = types.str;
+          default = "0400";
+        };
       };
 
       # !!! should this be a submodule?
@@ -74,6 +82,14 @@ let
       file = mkOption {
         description = "A consult-template file which produces EnvironmentFile-compatible output.";
         type = types.path;
+      };
+
+      perms = mkOption {
+        readOnly = true;
+        internal = true;
+        description = "The octal mode of the environment file as a string.";
+        type = types.str;
+        default = "0400";
       };
     };
   };
@@ -107,7 +123,7 @@ let
       };
 
       perms = mkOption {
-        description = "The mode of the secret file.";
+        description = "The octal mode of the secret file as a string.";
         type = types.str;
         default = "0400";
       };

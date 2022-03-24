@@ -47,7 +47,7 @@ let
         perms = mkOption {
           readOnly = true;
           internal = true;
-          description = "The octal mode of the environment file.";
+          description = "The octal mode of the environment file as a string.";
           type = types.str;
           default = "0400";
         };
@@ -87,7 +87,7 @@ let
       perms = mkOption {
         readOnly = true;
         internal = true;
-        description = "The octal mode of the environment file.";
+        description = "The octal mode of the environment file as a string.";
         type = types.str;
         default = "0400";
       };
@@ -123,7 +123,7 @@ let
       };
 
       perms = mkOption {
-        description = "The octal mode of the secret file.";
+        description = "The octal mode of the secret file as a string.";
         type = types.str;
         default = "0400";
       };

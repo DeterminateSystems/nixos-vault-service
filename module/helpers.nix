@@ -80,7 +80,7 @@ rec {
               in
               builtins.concatStringsSep ";"
                 ([
-                  "chown ${lib.optionalString (user != null) escapedUser}:${lib.optionalString (group!= null) escapedGroup} ${destination}"
+                  "chown ${lib.optionalString (user != null) escapedUser}:${lib.optionalString (group!= null) escapedGroup} ${lib.escapeShellArg destination}"
                 ] ++ lib.optionals (changeCommand != null) [
                   changeCommand
                 ]);

@@ -236,3 +236,4 @@ systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p Private
 
 * the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
 * there is no way to get the file path of the secret file, so you have to "just know" where it will be
+* "templated" systemd services (e.g. `getty@.service`) are untested, and so we don't know how they will behave

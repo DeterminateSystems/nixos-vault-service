@@ -69,7 +69,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/EnvFile";
           contents = ''
             {{ with secret "postgresql/creds/hydra" }}
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
@@ -88,7 +88,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -106,7 +106,7 @@ with
       template = [
         {
           command = "systemctl stop 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -123,7 +123,7 @@ with
     {
       template = [
         {
-          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -141,13 +141,13 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example-b.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-b.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -165,13 +165,13 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/EnvFile";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }

@@ -47,7 +47,7 @@ rec {
         (lib.optional (cfg.environment.template != null)
           (
             {
-              destination = "${environmentFilesRoot}EnvFile";
+              destination = "${environmentFilesRoot}${targetService}/EnvFile";
               contents = cfg.environment.template;
               inherit (cfg.environment) perms;
             } // lib.optionalAttrs (changeCommand != null) {
@@ -58,7 +58,7 @@ rec {
           (name: { file, perms }:
             (
               {
-                destination = "${environmentFilesRoot}${name}.EnvFile";
+                destination = "${environmentFilesRoot}${targetService}/${name}.EnvFile";
                 source = file;
                 inherit perms;
               } // lib.optionalAttrs (changeCommand != null) {

@@ -84,13 +84,10 @@ in
       };
     })
     ''
-      print(machine.succeed("sleep 5; journalctl -u setup-vault"))
+      machine.wait_for_file("/secret_id")
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
-      print(machine.succeed("sleep 5; ls /run/keys"))
-      print(machine.succeed("sleep 1; ls /run/keys/environment"))
-      print(machine.succeed("sleep 1; cat /run/keys/environment/EnvFile"))
-      print(machine.succeed("sleep 1; journalctl -u detsys-vaultAgent-example"))
+      print(machine.succeed("cat /run/keys/environment/example/EnvFile"))
     '';
 
   secretFile = mkTest
@@ -367,8 +364,8 @@ in
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes-v2"))
-      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /run/keys/environment/EnvFile"))
-      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /run/keys/environment/EnvFile"))
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /run/keys/environment/example/EnvFile"))
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /run/keys/environment/example/EnvFile"))
     '';
 
   multiEnvironment = mkTest
@@ -422,6 +419,9 @@ in
       machine.wait_for_file("/role_id")
       machine.start_job("example")
       machine.wait_for_job("detsys-vaultAgent-example")
+      print(machine.succeed("cat /run/keys/environment/example/EnvFile"))
+      print(machine.succeed("cat /run/keys/environment/example/a.EnvFile"))
+      print(machine.succeed("cat /run/keys/environment/example/b.EnvFile"))
     '';
 
   delayedVault = mkTest

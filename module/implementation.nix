@@ -61,7 +61,8 @@ let
       path = [ pkgs.glibc ];
 
       unitConfig = {
-        # BindsTo = [ fullServiceName ];
+        BindsTo = [ fullServiceName ];
+
         # FIXME: make more easily tunable
         StartLimitIntervalSec = 200;
         StartLimitBurst = 6;

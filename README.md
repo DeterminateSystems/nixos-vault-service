@@ -78,7 +78,8 @@ This temporary filessytem will be shared with the target service via the `JoinsN
             # Defaults to the secretFiles.defaultChangeAction, and any of those values are valid here too.
             changeAction = "reload";
 
-            # The octal mode of the created secret file (as a string).
+            # The octal mode of the created secret file (as a string). The
+            # leading 0 is optional and implied of not present.
             # Defaults to 0400.
             # NOTE: The owner and group of the file are set based on the
             # infected service's User= and Group= systemd directives.

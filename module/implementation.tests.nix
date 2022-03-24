@@ -548,7 +548,7 @@ in
         '';
 
         secretFiles.files."rand_bytes" = {
-          perms = "0642";
+          perms = "642";
           template = ''
             {{ with secret "sys/tools/random/3" "format=base64" }}
             Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
@@ -557,6 +557,7 @@ in
         };
 
         secretFiles.files."rand_bytes-v2" = {
+          perms = "400";
           template = ''
             {{ with secret "sys/tools/random/6" "format=base64" }}
             Have SIX random bytes, also from a templated string! {{ .Data.random_bytes }}

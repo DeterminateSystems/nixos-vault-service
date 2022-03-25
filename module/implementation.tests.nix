@@ -492,4 +492,51 @@ in
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true stat /tmp/detsys-vault/rand_bytes-v2"))
     '';
+
+  failedSidecar = mkTest
+    ({ pkgs, ... }: {
+      detsys.systemd.services.example.vaultAgent = {
+        extraConfig = {
+          vault = [{
+            address = "http://127.0.0.1:8200";
+            retry.num_retries = 1;
+          }];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
+          template_config = [{
+            static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
+          }];
+        };
+
+        environment.template = ''
+          {{ with secret "sys/tools/random/3" "format=base64" }}
+          MY_SECRET={{ .Data.non-existent-with-hyphen }}
+          {{ end }}
+        '';
+      };
+      systemd.services.example = {
+        script = ''
+          echo My secret is $MY_SECRET
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_file("/secret_id")
+      machine.systemctl("start --no-block example")
+      machine.succeed("sleep 3")
+      machine.succeed("pkill -f wait-for-example")
+      print(machine.fail("systemctl status detsys-vaultAgent-example"))
+      if "dead" not in machine.succeed("systemctl show -p SubState --value example"):
+          raise Exception("unit shouldn't have even started if the sidecar unit failed")
+    '';
 }

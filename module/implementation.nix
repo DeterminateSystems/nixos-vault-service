@@ -70,7 +70,7 @@ let
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
-        ExecStart = "${pkgs.vault}/bin/vault agent -log-level=trace -config ${agentCfgFile}";
+        ExecStart = "${pkgs.vault}/bin/vault agent -config ${agentCfgFile}";
         ExecStartPre = precreateDirectories serviceName
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }

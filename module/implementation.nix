@@ -111,7 +111,7 @@ in
       (lib.mapAttrsToList
         (serviceName: serviceConfig:
           let
-            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig.vaultAgent;
+            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig.vaultAgent config.detsys.defaultAgentConfig;
           in
           {
             systemd.services = {

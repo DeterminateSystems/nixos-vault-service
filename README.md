@@ -206,6 +206,33 @@ With a file named `vault-token.ctmpl`:
 }
 ```
 
+### Default Vault Agent configuration
+
+You can set the default `agentConfig` for all units by using the `detsys.defaultAgentConfig` interface.
+
+> **NOTE**: Manually-specified unit `agentConfig`s will override _**all**_ of the the settings specified in the `detsys.defaultAgentConfig` option.
+
+```
+{
+  detsys.defaultAgentConfig = {
+    vault = [{ address = "http://127.0.0.1:8200"; }];
+    auto_auth = [{
+      method = [{
+        config = [{
+          remove_secret_id_file_after_reading = false;
+          role_id_file_path = "/role_id";
+          secret_id_file_path = "/secret_id";
+        }];
+        type = "approle";
+      }];
+    }];
+    template_config = [{
+      static_secret_render_interval = "5s";
+    }];
+  };
+}
+```
+
 ---
 
 # Running tests

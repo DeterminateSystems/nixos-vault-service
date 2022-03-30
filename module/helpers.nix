@@ -116,7 +116,7 @@ rec {
         (tpl: tpl.destination)
         secretFileTemplates;
 
-      agentConfig = (cfg.extraConfig or { }) // {
+      agentConfig = (cfg.agentConfig or { }) // {
         template = environmentFileTemplates
           ++ secretFileTemplates;
       };

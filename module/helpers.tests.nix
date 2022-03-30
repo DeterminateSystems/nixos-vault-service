@@ -255,9 +255,9 @@ with
       ];
     };
 
-  extraConfig = expectRenderedConfig
+  agentConfig = expectRenderedConfig
     {
-      extraConfig = {
+      agentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
         auto_auth = [
           {

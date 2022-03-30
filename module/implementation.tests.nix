@@ -52,7 +52,7 @@ in
   basicEnvironment = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -93,7 +93,7 @@ in
   secretFile = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -149,7 +149,7 @@ in
   secretFileSlow = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -209,7 +209,7 @@ in
       };
 
       detsys.systemd.services.nginx.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -257,7 +257,7 @@ in
       '';
 
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -299,7 +299,7 @@ in
   perms = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -371,7 +371,7 @@ in
   multiEnvironment = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
             method = [{
@@ -430,7 +430,7 @@ in
       systemd.services.setup-vault.wantedBy = lib.mkForce [ ];
 
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{
             address = "http://127.0.0.1:8200";
           }];
@@ -496,7 +496,7 @@ in
   failedSidecar = mkTest
     ({ pkgs, ... }: {
       detsys.systemd.services.example.vaultAgent = {
-        extraConfig = {
+        agentConfig = {
           vault = [{
             address = "http://127.0.0.1:8200";
             retry.num_retries = 1;

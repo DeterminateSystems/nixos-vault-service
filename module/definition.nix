@@ -15,8 +15,8 @@ let
     options = {
       enable = mkEnableOption "vaultAgent";
 
-      extraConfig = mkOption {
-        description = "Extra assorted config bits. The only place to specify vault and auto_auth config. To be replaced.";
+      agentConfig = mkOption {
+        description = "Vault agent configuration. The only place to specify vault and auto_auth config. To be replaced.";
         type = types.attrsOf types.unspecified;
         default = { };
       };

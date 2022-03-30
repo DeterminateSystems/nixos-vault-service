@@ -17,8 +17,8 @@ let
 
       agentConfig = mkOption {
         description = "Vault agent configuration. The only place to specify vault and auto_auth config. To be replaced.";
-        type = types.attrsOf types.unspecified;
-        default = { };
+        type = types.nullOr (types.attrsOf types.unspecified);
+        default = null;
       };
 
       # !!! should this be a submodule?
@@ -132,9 +132,17 @@ let
 
 in
 {
-  options.detsys.systemd.services = mkOption {
-    type = types.attrsOf (types.submodule perServiceModule);
-    default = { };
+  options.detsys = {
+    defaultAgentConfig = mkOption {
+      description = "Default Vault agent configuration. Delegates to individual <code>agentConfig</code>s, if set.";
+      type = types.attrsOf types.unspecified;
+      default = { };
+    };
+
+    systemd.services = mkOption {
+      type = types.attrsOf (types.submodule perServiceModule);
+      default = { };
+    };
   };
 
   config = lib.mkMerge [

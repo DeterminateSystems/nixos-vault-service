@@ -577,10 +577,25 @@ in
           file;
       };
 
+      detsys.systemd.services.example2.vaultAgent = {
+        secretFiles.files."rand_bytes".template = ''
+          {{ with secret "sys/tools/random/3" "format=base64" }}
+          Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+
       systemd.services.example = {
         script = ''
           cat /tmp/detsys-vault/rand_bytes
           cat /tmp/detsys-vault/rand_bytes-v2
+          sleep infinity
+        '';
+      };
+
+      systemd.services.example2 = {
+        script = ''
+          cat /tmp/detsys-vault/rand_bytes
           sleep infinity
         '';
       };
@@ -591,6 +606,9 @@ in
       machine.wait_for_job("detsys-vaultAgent-example")
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
-      print(machine.succeed("journalctl -u detsys-vaultAgent-example"))
+      machine.start_job("example2")
+      machine.wait_for_job("detsys-vaultAgent-example2")
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example2.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example2.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
     '';
 }

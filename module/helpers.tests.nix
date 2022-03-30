@@ -26,7 +26,7 @@ with
       ) // { originalValue = val; };
   in
   {
-    expectRenderedConfig = cfg: expect:
+    expectRenderedConfig = globalCfg: cfg: expect:
       let
         evaluatedCfg = evalCfg {
           systemd.services.example = { };
@@ -36,7 +36,7 @@ with
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.systemd.services.example.vaultAgent).agentConfig;
+        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.systemd.services.example.vaultAgent globalCfg).agentConfig;
       in
       if !result.success
       then
@@ -46,18 +46,20 @@ with
         throw "Unexpected assertions or warnings. Assertions: ${builtins.toJSON filteredAsserts}. Warnings: ${builtins.toJSON result.value.warnings}"
       else if actual != expect
       then
-        throw "Mismatched configuration. Expected: ${builtins.toJSON expect} Got: ${builtins.toJSON actual}"
+        throw "Mismatched configuration.\nExpected: ${builtins.toJSON expect}\nGot: ${builtins.toJSON actual}"
       else "ok";
   }
 );
 {
   nothingSet = expectRenderedConfig
     { }
+    { }
     {
       template = [ ];
     };
 
   environmentOnlyInline = expectRenderedConfig
+    { }
     {
       environment.template = ''
         {{ with secret "postgresql/creds/hydra" }}
@@ -81,6 +83,7 @@ with
     };
 
   environmentOneFile = expectRenderedConfig
+    { }
     {
       environment.templateFiles."example-a".file = ./helpers.tests.nix;
     }
@@ -96,6 +99,7 @@ with
     };
 
   environmentChangeStop = expectRenderedConfig
+    { }
     {
       environment = {
         changeAction = "stop";
@@ -114,6 +118,7 @@ with
     };
 
   environmentChangeNone = expectRenderedConfig
+    { }
     {
       environment = {
         changeAction = "none";
@@ -131,6 +136,7 @@ with
     };
 
   environmentTwoFiles = expectRenderedConfig
+    { }
     {
       environment.templateFiles = {
         "example-a".file = ./helpers.tests.nix;
@@ -155,6 +161,7 @@ with
     };
 
   environmentInlineAndFiles = expectRenderedConfig
+    { }
     {
       environment = {
         template = "FOO=BAR";
@@ -179,6 +186,7 @@ with
     };
 
   secretFileInline = expectRenderedConfig
+    { }
     {
       secretFiles.files."example".template = "FOO=BAR";
     }
@@ -194,6 +202,7 @@ with
     };
 
   secretFileTemplate = expectRenderedConfig
+    { }
     {
       secretFiles.files."example".templateFile = ./helpers.tests.nix;
     }
@@ -209,6 +218,7 @@ with
     };
 
   secretFileChangedDefaultChangeAction = expectRenderedConfig
+    { }
     {
       secretFiles = {
         defaultChangeAction = "reload";
@@ -227,6 +237,7 @@ with
     };
 
   secretFileChangedDefaultChangeActionOverride = expectRenderedConfig
+    { }
     {
       secretFiles = {
         defaultChangeAction = "reload";
@@ -256,6 +267,7 @@ with
     };
 
   agentConfig = expectRenderedConfig
+    { }
     {
       agentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
@@ -304,6 +316,59 @@ with
           ];
         }
       ];
+      template = [
+        {
+          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-a";
+          contents = "FOO=BAR";
+          perms = "0400";
+        }
+        {
+          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
+          destination = "${helpers.secretFilesRoot}example-b";
+          contents = "FOO=BAR";
+          perms = "0700";
+        }
+      ];
+    };
+
+  defaultAgentConfig = expectRenderedConfig
+    {
+      vault = [{ address = "http://127.0.0.1:8200"; }];
+      auto_auth = [{
+        method = [{
+          config = [{
+            remove_secret_id_file_after_reading = false;
+            role_id_file_path = "role_id";
+            secret_id_file_path = "secret_id";
+          }];
+          type = "approle";
+        }];
+      }];
+    }
+    {
+      secretFiles = {
+        defaultChangeAction = "reload";
+        files."example-a".template = "FOO=BAR";
+        files."example-b" = {
+          changeAction = "restart";
+          template = "FOO=BAR";
+          perms = "0700";
+        };
+      };
+    }
+    {
+      vault = [{ address = "http://127.0.0.1:8200"; }];
+      auto_auth = [{
+        method = [{
+          config = [{
+            remove_secret_id_file_after_reading = false;
+            role_id_file_path = "role_id";
+            secret_id_file_path = "secret_id";
+          }];
+          type = "approle";
+        }];
+      }];
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";

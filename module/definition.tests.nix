@@ -76,6 +76,7 @@ suite {
   nothingSet = expectOk {
     systemd.services.nothing-set = { };
     detsys.systemd.services.nothing-set.vaultAgent = { };
+    detsys.defaultAgentConfig = { };
   };
 
   envTemplate = expectOk {
@@ -190,4 +191,29 @@ suite {
           };
         };
       };
+
+  globalConfig = expectOk {
+    systemd.services.global-config = { };
+    detsys.systemd.services.global-config.vaultAgent = { };
+    detsys.defaultAgentConfig = {
+      vault = [{
+        address = "http://127.0.0.1:8200";
+        retry.num_retries = 1;
+      }];
+      auto_auth = [{
+        method = [{
+          config = [{
+            remove_secret_id_file_after_reading = false;
+            role_id_file_path = "/role_id";
+            secret_id_file_path = "/secret_id";
+          }];
+          type = "approle";
+        }];
+      }];
+      template_config = [{
+        static_secret_render_interval = "5s";
+        exit_on_retry_failure = true;
+      }];
+    };
+  };
 }

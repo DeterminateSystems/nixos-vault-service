@@ -585,6 +585,31 @@ in
         '';
       };
 
+      detsys.systemd.services.example3.vaultAgent = {
+        agentConfig = {
+          vault = [{ address = "http://127.0.0.1:8200"; }];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
+          template_config = [{
+            static_secret_render_interval = "1s";
+          }];
+        };
+
+        secretFiles.files."rand_bytes".template = ''
+          {{ with secret "sys/tools/random/3" "format=base64" }}
+          Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+
       systemd.services.example = {
         script = ''
           cat /tmp/detsys-vault/rand_bytes
@@ -594,6 +619,13 @@ in
       };
 
       systemd.services.example2 = {
+        script = ''
+          cat /tmp/detsys-vault/rand_bytes
+          sleep infinity
+        '';
+      };
+
+      systemd.services.example3 = {
         script = ''
           cat /tmp/detsys-vault/rand_bytes
           sleep infinity
@@ -609,6 +641,10 @@ in
       machine.start_job("example2")
       machine.wait_for_job("detsys-vaultAgent-example2")
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example2.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
-      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example2.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes-v2"))
+      machine.start_job("example3")
+      machine.wait_for_job("detsys-vaultAgent-example3")
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example3.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
+      machine.succeed("sleep 2")
+      print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example3.service -p PrivateTmp=true cat /tmp/detsys-vault/rand_bytes"))
     '';
 }

@@ -1,5 +1,6 @@
 { lib }:
 rec {
+  # This is ~safe because we require PrivateTmp to be true.
   secretFilesRoot = "/tmp/detsys-vault/";
   environmentFilesRoot = "/run/keys/environment/";
 
@@ -68,7 +69,7 @@ rec {
           cfg.environment.templateFiles);
 
       secretFileTemplates = lib.mapAttrsToList
-        (name: { changeAction, templateFile, template, perms }:
+        (name: { changeAction, templateFile, template, perms, path }:
           rec {
             command =
               let
@@ -84,8 +85,7 @@ rec {
                 ] ++ lib.optionals (changeCommand != null) [
                   changeCommand
                 ]);
-            # This is ~safe because we require PrivateTmp to be true.
-            destination = "${secretFilesRoot}${name}";
+            destination = path;
             inherit perms;
           } //
           (

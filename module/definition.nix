@@ -39,7 +39,7 @@ let
         };
 
         template = mkOption {
-          description = "A consult-template snippet which produces EnvironmentFile-compatible output.";
+          description = "A consul-template snippet which produces EnvironmentFile-compatible output.";
           type = types.nullOr types.lines;
           default = null;
         };
@@ -80,7 +80,7 @@ let
   vaultAgentEnvironmentFileModule = { config, ... }: {
     options = {
       file = mkOption {
-        description = "A consult-template file which produces EnvironmentFile-compatible output.";
+        description = "A consul-template file which produces EnvironmentFile-compatible output.";
         type = types.path;
       };
 
@@ -111,13 +111,13 @@ let
       };
 
       templateFile = mkOption {
-        description = "A consult-template file. Conflicts with template.";
+        description = "A consul-template file. Conflicts with template.";
         type = types.nullOr types.path;
         default = null;
       };
 
       template = mkOption {
-        description = "A consult-template snippet. Conflicts with templateFile.";
+        description = "A consul-template snippet. Conflicts with templateFile.";
         type = types.nullOr types.lines;
         default = null;
       };

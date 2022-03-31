@@ -38,6 +38,19 @@ let
     pkgs.writeShellScript "wait-for-${serviceName}" ''
       set -eux
       ${waiter}
+
+      # wait for ExecStart to exit
+      (
+        while [[ (${lib.concatMapStringsSep " || " (file: "! -f ${lib.escapeShellArg file.destination}") files}) ]] \
+           && [ "$(systemctl show detsys-vaultAgent-${serviceName} -p ExecMainExitTimestampMonotonic --value)" -eq 0 ]
+        do
+          sleep 1
+        done
+
+        # stop waiting for secret files so that the unit can restart
+        [ "$(systemctl show detsys-vaultAgent-${serviceName} -p ExecMainCode --value)" -ne 0 ] && kill $$
+      ) &
+
       wait
     '';
 

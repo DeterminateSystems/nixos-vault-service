@@ -30,13 +30,13 @@ with
       let
         evaluatedCfg = evalCfg {
           systemd.services.example = { };
-          detsys.systemd.services.example.vaultAgent = cfg;
+          detsys.vaultAgent.systemd.services.example = cfg;
         };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.systemd.services.example.vaultAgent globalCfg).agentConfig;
+        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.vaultAgent.systemd.services.example globalCfg).agentConfig;
       in
       if !result.success
       then

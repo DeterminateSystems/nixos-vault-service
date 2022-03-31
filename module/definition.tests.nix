@@ -67,7 +67,7 @@ with
         evaluatedCfg
       else if (expect != actual)
       then
-        throw "Unexpected assertions or warnings. Expected: ${builtins.toJSON expect} Got: ${builtins.toJSON actual}"
+        throw "Unexpected assertions or warnings.\nExpected: ${builtins.toJSON expect}\nGot: ${builtins.toJSON actual}"
       else
         "ok";
   }
@@ -75,13 +75,13 @@ with
 suite {
   nothingSet = expectOk {
     systemd.services.nothing-set = { };
-    detsys.systemd.services.nothing-set.vaultAgent = { };
-    detsys.defaultAgentConfig = { };
+    detsys.vaultAgent.systemd.services.nothing-set = { };
+    detsys.vaultAgent.defaultAgentConfig = { };
   };
 
   envTemplate = expectOk {
     systemd.services.env-template = { };
-    detsys.systemd.services.env-template.vaultAgent = {
+    detsys.vaultAgent.systemd.services.env-template = {
       enable = true;
 
       environment.template = ''
@@ -94,7 +94,7 @@ suite {
 
   envTemplateFile = expectOk {
     systemd.services.env-template-file = { };
-    detsys.systemd.services.env-template-file.vaultAgent = {
+    detsys.vaultAgent.systemd.services.env-template-file = {
       enable = true;
       environment.templateFiles."example".file = ./example.ctmpl;
     };
@@ -102,7 +102,7 @@ suite {
 
   envTemplateFileNone = expectEvalError {
     systemd.services.env-template-file = { };
-    detsys.systemd.services.env-template-file.vaultAgent = {
+    detsys.vaultAgent.systemd.services.env-template-file = {
       enable = true;
       environment.templateFiles."example" = { };
     };
@@ -110,7 +110,7 @@ suite {
 
   secretTemplateFile = expectOk {
     systemd.services.secret-template-file = { };
-    detsys.systemd.services.secret-template-file.vaultAgent = {
+    detsys.vaultAgent.systemd.services.secret-template-file = {
       enable = true;
       secretFiles = {
         files."example".templateFile = ./example.ctmpl;
@@ -120,7 +120,7 @@ suite {
 
   secretTemplate = expectOk {
     systemd.services.secret-template = { };
-    detsys.systemd.services.secret-template.vaultAgent = {
+    detsys.vaultAgent.systemd.services.secret-template = {
       enable = true;
       secretFiles = {
         defaultChangeAction = "reload";
@@ -134,12 +134,12 @@ suite {
   secretNoTemplate = expectAssertsWarns
     {
       assertions = [
-        "detsys.systemd.services.secret-template.vaultAgent.secretFiles.example: One of the 'templateFile' and 'template' options must be specified."
+        "detsys.vaultAgent.systemd.services.secret-template.secretFiles.example: One of the 'templateFile' and 'template' options must be specified."
       ];
     }
     {
       systemd.services.secret-template = { };
-      detsys.systemd.services.secret-template.vaultAgent = {
+      detsys.vaultAgent.systemd.services.secret-template = {
         enable = true;
         secretFiles = {
           defaultChangeAction = "reload";
@@ -151,12 +151,12 @@ suite {
   secretMutuallyExclusiveTemplates = expectAssertsWarns
     {
       assertions = [
-        "detsys.systemd.services.secret-template.vaultAgent.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
+        "detsys.vaultAgent.systemd.services.secret-template.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
       ];
     }
     {
       systemd.services.secret-template = { };
-      detsys.systemd.services.secret-template.vaultAgent = {
+      detsys.vaultAgent.systemd.services.secret-template = {
         enable = true;
         secretFiles = {
           defaultChangeAction = "reload";
@@ -173,7 +173,7 @@ suite {
       {
         assertions = [
           ''
-            detsys.systemd.services.no-private-tmp:
+            detsys.vaultAgent.systemd.services.no-private-tmp:
                 The specified service has PrivateTmp= (systemd.exec(5)) disabled, but it must
                 be enabled to share secrets between the sidecar service and the infected service.
           ''
@@ -181,7 +181,7 @@ suite {
       }
       {
         systemd.services.no-private-tmp.serviceConfig.PrivateTmp = false;
-        detsys.systemd.services.no-private-tmp.vaultAgent = {
+        detsys.vaultAgent.systemd.services.no-private-tmp = {
           enable = true;
           secretFiles = {
             defaultChangeAction = "reload";
@@ -194,8 +194,8 @@ suite {
 
   globalConfig = expectOk {
     systemd.services.global-config = { };
-    detsys.systemd.services.global-config.vaultAgent = { };
-    detsys.defaultAgentConfig = {
+    detsys.vaultAgent.systemd.services.global-config = { };
+    detsys.vaultAgent.defaultAgentConfig = {
       vault = [{
         address = "http://127.0.0.1:8200";
         retry.num_retries = 1;

@@ -51,7 +51,7 @@ in
 {
   basicEnvironment = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -92,7 +92,7 @@ in
 
   secretFile = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -148,7 +148,7 @@ in
 
   secretFileSlow = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -208,7 +208,7 @@ in
         };
       };
 
-      detsys.systemd.services.nginx.vaultAgent = {
+      detsys.vaultAgent.systemd.services.nginx = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -256,7 +256,7 @@ in
         sleep infinity
       '';
 
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -298,7 +298,7 @@ in
 
   perms = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -370,7 +370,7 @@ in
 
   multiEnvironment = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{
@@ -429,7 +429,7 @@ in
       systemd.services.vault.wantedBy = lib.mkForce [ ];
       systemd.services.setup-vault.wantedBy = lib.mkForce [ ];
 
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{
             address = "http://127.0.0.1:8200";
@@ -495,7 +495,7 @@ in
 
   failedSidecar = mkTest
     ({ pkgs, ... }: {
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{
             address = "http://127.0.0.1:8200";
@@ -542,7 +542,7 @@ in
 
   defaultConfig = mkTest
     ({ pkgs, ... }: {
-      detsys.defaultAgentConfig = {
+      detsys.vaultAgent.defaultAgentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
         auto_auth = [{
           method = [{
@@ -559,7 +559,7 @@ in
         }];
       };
 
-      detsys.systemd.services.example.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example = {
         secretFiles.files."rand_bytes".template = ''
           {{ with secret "sys/tools/random/3" "format=base64" }}
           Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
@@ -577,7 +577,7 @@ in
           file;
       };
 
-      detsys.systemd.services.example2.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example2 = {
         secretFiles.files."rand_bytes".template = ''
           {{ with secret "sys/tools/random/3" "format=base64" }}
           Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
@@ -585,7 +585,7 @@ in
         '';
       };
 
-      detsys.systemd.services.example3.vaultAgent = {
+      detsys.vaultAgent.systemd.services.example3 = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
           auto_auth = [{

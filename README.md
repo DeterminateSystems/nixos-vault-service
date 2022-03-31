@@ -26,7 +26,7 @@ This temporary filessytem will be shared with the target service via the `JoinsN
 
 ```nix
 {
-  detsys.systemd.services."service-name".vaultAgent = {
+  detsys.vaultAgent.systemd.services."service-name" = {
     enable = true;
 
     environment = {
@@ -105,7 +105,7 @@ Getting database credentials for Hydra:
 
 ```nix
 {
-  detsys.systemd.services.hydra-init.vaultAgent = {
+  detsys.vaultAgent.systemd.services.hydra-init = {
     enable = true;
 
     environment.template = ''
@@ -140,7 +140,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-    detsys.systemd.services.prometheus.vaultAgent = {
+    detsys.vaultAgent.systemd.services.prometheus = {
         enable = true;
 
         environment.templateFiles."dbi".file = ./hydra-dbi-env.ctmpl;
@@ -153,7 +153,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-  detsys.systemd.services.nginx.vaultAgent = {
+  detsys.vaultAgent.systemd.services.nginx = {
     enable = true;
 
     secretFiles = {
@@ -172,7 +172,7 @@ HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.usernam
 
 ```nix
 {
-    detsys.systemd.services.prometheus.vaultAgent = {
+    detsys.vaultAgent.systemd.services.prometheus = {
         enable = true;
 
         secretFiles = {
@@ -195,7 +195,7 @@ With a file named `vault-token.ctmpl`:
 
 ```nix
 {
-    detsys.systemd.services.prometheus.vaultAgent = {
+    detsys.vaultAgent.systemd.services.prometheus = {
         enable = true;
 
         secretFiles = {
@@ -208,13 +208,13 @@ With a file named `vault-token.ctmpl`:
 
 ### Default Vault Agent configuration
 
-You can set the default `agentConfig` for all units by using the `detsys.defaultAgentConfig` interface.
+You can set the default `agentConfig` for all units by using the `detsys.vaultAgent.defaultAgentConfig` interface.
 
-> **NOTE**: Manually-specified unit `agentConfig`s will override _**all**_ of the the settings specified in the `detsys.defaultAgentConfig` option.
+> **NOTE**: Manually-specified unit `agentConfig`s will override _**all**_ of the the settings specified in the `detsys.vaultAgent.defaultAgentConfig` option.
 
 ```
 {
-  detsys.defaultAgentConfig = {
+  detsys.vaultAgent.defaultAgentConfig = {
     vault = [{ address = "http://127.0.0.1:8200"; }];
     auto_auth = [{
       method = [{

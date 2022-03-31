@@ -111,7 +111,7 @@ in
       (lib.mapAttrsToList
         (serviceName: serviceConfig:
           let
-            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig.vaultAgent config.detsys.defaultAgentConfig;
+            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig config.detsys.vaultAgent.defaultAgentConfig;
           in
           {
             systemd.services = {
@@ -124,6 +124,6 @@ in
               };
             };
           })
-        config.detsys.systemd.services))
+        config.detsys.vaultAgent.systemd.services))
   ];
 }

@@ -41,8 +41,7 @@ let
 
       # wait for ExecStart to exit
       (
-        while [[ (${lib.concatMapStringsSep " || " (file: "! -f ${lib.escapeShellArg file.destination}") files}) ]] \
-           && [ "$(systemctl show detsys-vaultAgent-${serviceName} -p ExecMainExitTimestampMonotonic --value)" -eq 0 ]
+        while [[ (${lib.concatMapStringsSep " || " (file: "! -f ${lib.escapeShellArg file.destination}") files}) ]] && [ "$(systemctl show detsys-vaultAgent-${serviceName} -p ExecMainExitTimestampMonotonic --value)" -eq 0 ]
         do
           sleep 1
         done

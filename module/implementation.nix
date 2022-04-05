@@ -56,12 +56,12 @@ let
 
       wantedBy = [ fullServiceName ];
       before = [ fullServiceName ];
+      bindsTo = [ fullServiceName ];
 
       # Needs getent in PATH
       path = [ pkgs.glibc ];
 
       unitConfig = {
-        BindsTo = [ fullServiceName ];
         StartLimitIntervalSec = lib.mkDefault 30;
         StartLimitBurst = lib.mkDefault 6;
       };

@@ -15,10 +15,7 @@ If the user manually start, restarts, or stops the target service, the agent sid
 
 ### Where do the files go?
 
-> **NOTE:** Currently, we use the systemd `PrivateTmp` directive, which interacts with `JoinsNamespaceOf` in a documented fashion.
-> It is unknown at this time whether `TemporaryFileSystem` exhibits the same functionality (namely, sharing of mountpoints between services) when used in conjunction with `JoinsNamespaceOf`.
-
-We'll create a temporary filesystem in the sidecar using the `TemporaryFileSystem` at `/run/detsys/vaultAgent`.
+We'll create a directory, `/tmp/detsys-vault`, in the sidecar's `/tmp` which will be protected from external access by the `PrivateTmp` directive.
 All generated, secret files will go there.
 This temporary filessytem will be shared with the target service via the `JoinsNamespaceOf` directive.
 

@@ -1,7 +1,14 @@
 { lib, config, ... }:
 let
-  inherit (lib) mkOption mkEnableOption types;
-  inherit (import ./helpers.nix { inherit lib; }) mkScopedMerge;
+  inherit (lib)
+    mkOption
+    mkEnableOption
+    types;
+
+  inherit (import ./helpers.nix { inherit lib; })
+    mkScopedMerge
+    secretFilesRoot
+    ;
 
   vaultAgentModule = { config, ... }: {
     options = {
@@ -118,6 +125,13 @@ let
         description = "The octal mode of the secret file as a string.";
         type = types.str;
         default = "0400";
+      };
+
+      path = mkOption {
+        readOnly = true;
+        description = "The path to the secret file inside the unit's namespace's PrivateTmp.";
+        type = types.str;
+        default = "${secretFilesRoot}${name}";
       };
     };
   };

@@ -230,7 +230,28 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
 }
 ```
 
-## How to Override systemd Service Configuration
+### Accessing the path of a file in `secretFiles`
+
+All `secretFiles.files.<NAME>` expose a `path` attribute, so you don't need to memorize where the secrets are written to:
+
+```
+{ config, ... }:
+{
+  detsys.vaultAgent.systemd.services.prometheus = {
+    enable = true;
+
+    secretFiles.files."vault.token".template = ''
+      {{ with secret "secrets/nginx-basic-auth"}}
+      {{ .Data.data.htpasswd }}
+      {{ end }}
+    '';
+  };
+}
+```
+
+You can then access the path to the above `vault.token` secret file via `config.detsys.vaultAgent.systemd.services.prometheus.secretFiles.files."vault.token".path`.
+
+## How to override systemd service configuration
 
 By using the NixOS module system, it is possible to override the sidecar's systemd service configuration (e.g. to tune how often the service is allowed to restart):
 
@@ -288,5 +309,4 @@ systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p Private
 # Known Issues
 
 * the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
-* there is no way to get the file path of the secret file, so you have to "just know" where it will be
 * "templated" systemd services (e.g. `getty@.service`) are untested, and so we don't know how they will behave

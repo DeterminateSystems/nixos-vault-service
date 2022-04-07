@@ -212,7 +212,7 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
 
 > **NOTE**: Manually-specified unit `agentConfig`s will override _**all**_ of the the settings specified in the `detsys.vaultAgent.defaultAgentConfig` option.
 
-```
+```nix
 {
   detsys.vaultAgent.defaultAgentConfig = {
     vault = [{ address = "http://127.0.0.1:8200"; }];
@@ -229,6 +229,35 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
     template_config = [{
       static_secret_render_interval = "5s";
     }];
+  };
+}
+```
+
+## How to Override systemd Service Configuration
+
+By using the NixOS module system, it is possible to override the sidecar's systemd service configuration (e.g. to tune how often the service is allowed to restart):
+
+```nix
+{
+  detsys.vaultAgent.systemd.services.prometheus = {
+    enable = true;
+
+    secretFiles = {
+      defaultChangeAction = "none";
+      files."vault.token".templateFile = ./vault-token.ctmpl;
+    };
+  };
+
+  systemd.services.detsys-vaultAgent-prometheus = {
+    unitConfig = {
+      StartLimitIntervalSec = 300;
+      StartLimitBurst = 10;
+    };
+
+    serviceConfig = {
+      RestartSec = 30;
+      Restart = "always";
+    };
   };
 }
 ```

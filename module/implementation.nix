@@ -56,20 +56,21 @@ let
 
       wantedBy = [ fullServiceName ];
       before = [ fullServiceName ];
+      bindsTo = [ fullServiceName ];
 
       # Needs getent in PATH
       path = [ pkgs.glibc ];
 
       unitConfig = {
-        BindsTo = [ fullServiceName ];
-
-        # FIXME: make more easily tunable
-        StartLimitIntervalSec = 200;
-        StartLimitBurst = 6;
+        StartLimitIntervalSec = lib.mkDefault 30;
+        StartLimitBurst = lib.mkDefault 6;
       };
 
       serviceConfig = {
         PrivateTmp = lib.mkDefault true;
+        Restart = lib.mkDefault "on-failure";
+        RestartSec = lib.mkDefault 5;
+
         ExecStart = "${pkgs.vault}/bin/vault agent -config ${agentCfgFile}";
         ExecStartPre = precreateDirectories serviceName
           ({ }
@@ -78,10 +79,6 @@ let
         ExecStartPost = waitFor serviceName
           (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
             ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
-
-        # FIXME: make more easily tunable
-        Restart = "on-failure";
-        RestartSec = 5;
       };
 
     };

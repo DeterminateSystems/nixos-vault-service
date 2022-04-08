@@ -1,213 +1,140 @@
-# Vault integration for systemd services on NixOS
+# nixos-vault-service
 
-The goal is to easily integrate Vault into an existing systemd service.
-Note the goal is not magic: services may need to be changed or patched to make this work.
-However, it should be straightforward to express the intent of additive secrets to a service.
+The NixOS Vault Service module is a NixOS module that allows easily integrating
+Vault with existing systemd services.
 
-## Overall Design
+> **NOTE**: The goal is not magic, so some services may need to be changed or patched.
 
-In general the idea is to create a NixOS module which builds on top of the existing systemd interface and "hooks in" to it.
-Each service would get a Vault Agent service running as a "sidecar": in addition to, and bound to the lifecycle of its target process.
+## Usage
 
-The agent will start before the target service, and can send restart/reload instructions to systmed. The agent should share the private namespace of the service as well.
+### With Flakes
 
-If the user manually start, restarts, or stops the target service, the agent sidecar should start, restart, or stop with it.
+```nix
+# flake.nix
+{
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  inputs.vaultModule = {
+    url = "github:DeterminateSystems/nixos-vault-service/main";
+    inputs.nixpkgs.follows = "nixpkgs";
+  };
 
-### Where do the files go?
+  outputs = { self, nixpkgs, vaultModule }: {
+    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        vaultModule.nixosModule
+        ./configuration.nix
+      ];
+    };
+  };
+}
+```
 
-We'll create a directory, `/tmp/detsys-vault`, in the sidecar's `/tmp` which will be protected from external access by the `PrivateTmp` directive.
-All generated, secret files will go there.
-This temporary filessytem will be shared with the target service via the `JoinsNamespaceOf` directive.
+### Without Flakes
 
-## Example Nix Interface
+There are many ways to make this module available in your system configuration
+without flakes. This is an example of just one possible method:
+
+```nix
+# vault.nix
+let
+  vaultModuleSrc = builtins.fetchGit {
+    url = "https://github.com/DeterminateSystems/nixos-vault-service.git";
+    ref = "main";
+  };
+in
+{
+  imports = [ "${vaultModuleSrc}/module/implementation" ];
+}
+```
+
+## Configuration
+
+After you have the module imported by your system's configuration, you can now
+being integrating your services with Vault.
+
+### Options
+
+* `detsys.vaultAgent.defaultAgentConfig` (optional, default: `{ }`) &ndash; The default configuration for all Vault agents. Defers to individual service's `agentConfig`, if set.
+* `detsys.vaultAgent.systemd.services.<service-name>.enable` (optional, default: `false`) &ndash; Whether to enable Vault integration with the service specified by `<service-name>`.
+* `detsys.vaultAgent.systemd.services.<service-name>.agentConfig` (optional, default: `null`) &ndash; The Vault agent configuration for this service.
+* `detsys.vaultAgent.systemd.services.<service-name>.environment` (optional, default: `{ }`) &ndash; Environment variable secret configuration.
+  * `detsys.vaultAgent.systemd.services.<service-name>.environment.changeAction` (optional, default: `"restart"`) &ndash; What action to take if any secrets in the environment change. One of `"restart"`, `"stop"`, or `"none"`.
+  * `detsys.vaultAgent.systemd.services.<service-name>.environment.templateFiles` (optional, default: `{ }`) &ndash; Set of files containing environment variables for Vault to template.
+    * `detsys.vaultAgent.systemd.services.<service-name>.environment.templateFiles.<filename>.file` (required) &ndash; The file containing the environment variable(s) for Vault to template.
+  * `detsys.vaultAgent.systemd.services.<service-name>.environment.template` (optional, default: `null`) &ndash; A multi-line string containing environment variables for Vault to template.
+* `detsys.vaultAgent.systemd.services.<service-name>.secretFiles` (optional, default: `{ }`) &ndash; Secret file configuration.
+  * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.defaultChangeAction` (optional, default: `"restart"`) &ndash; What action to take if any secrets in any of these files change. One of `"restart"`, `"reload"`, `"stop"`, or `"none"`.
+  * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files` (optional: default `{ }`) &ndash; Set of files for Vault to template.
+    * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.changeAction` (optional, default: the `defaultChangeAction`) &ndash; What action to take if the secret file changes. One of `"restart"`, `"reload"`, `"stop"`, or `"none"`.
+    * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.templateFile` (optional, default: `null`) &ndash; A file containing a Vault template. Conflicts with `template`.
+    * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.template` (optional, default: `null`) &ndash; A string containing a Vault template. Conflicts with `templateFile`.
+    * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.perms` (optional, default: `"0400"`) &ndash; The octal mode of the secret file.
+    * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.path` (read-only) &ndash; The path to the secret file inside `<service-name>`'s namespace's `PrivateTmp`.
+
+### Examples
+
+#### Demonstrating all the options
 
 ```nix
 {
+  detsys.vaultAgent.defaultAgentConfig = {
+    # The configuration passed to `vault agent` -- will be converted to JSON.
+    # This is where your `vault`, `auto_auth`, `template_config`, etc., configuration should go.
+  };
+
   detsys.vaultAgent.systemd.services."service-name" = {
     enable = true;
 
+    agentConfig = {
+      # Overrides the entirety of `detsys.vaultAgent.defaultAgentConfig`.
+    };
+
     environment = {
-        # What to do by default if any secrets in the environment change.
-        #
-        # One of:
-        #  * restart (default)
-        #  * stop
-        #  * none
-        #
-        # Note that "reload" is not valid, because the environment
-        # cannot be reloaded.
-        changeAction = "restart";
+      changeAction = "restart";
 
-        templateFiles = {
-            # An EnvironmentFile is created for each section here.
-            "file-section" = {
-                file = ./example.ctmpl;
-            };
-        };
+      templateFiles = {
+        "example-a".file = ./example-a.ctmpl;
+        "example-b".file = ./example-b.ctmpl;
+      };
 
-        # vault-agent template data embedded as strings in the module.
-        # Multiple template strings can be provided in different modules,
-        # which will be concatenated together into a single EnvironmentFile.
-        # It is up to the caller to escape the contents and handle the input properly.
+      template = ''
+        EXAMPLE_C={{ with secret "secret/super_secret" }}{{ .Data.c }}{{ end }}
+        EXAMPLE_D={{ with secret "secret/super_secret" }}{{ .Data.d }}{{ end }}
+      '';
+    };
+
+    secretFiles = {
+      defaultChangeAction = "restart";
+
+      files."example-e" = {
+        changeAction = "reload";
+        perms = "0440";
+
+        # NOTE: You can only use either:
+        templateFile = ./example-e.ctmpl;
+        # or:
         template = ''
-            WIFI_PASSWORD={{ with secret "secret/passwords" }}{{ .Data.wifi }}{{ end }}
+          {{ with secret "secret/super_secret" }}{{ .Data.e }}{{ end }}
         '';
+        # but not both.
+      };
 
-        # In the future, once we have correct escaping down right:
-        variables."WIFI_PASSWORD" = ''{{ with secret "secret/passwords" }}{{ .Data.wifi }}{{ end }}'';
-    };
-
-    secretFiles = {
-        # What to do by default if any secrets change.
-        #
-        # One of:
-        #  * stop
-        #  * restart
-        #  * reload
-        #  * none
-        defaultChangeAction = "...";
-
-        # This file will be accessible at `/tmp/detsys-vault/webserver.cert` by
-        # any units in the namespace of `detsys-vaultAgent-service-name.service`
-        # via the JoinsNamespaceOf= systemd directive.
-        files."webserver.cert" = {
-            # What to do if this *specific* file changes content.
-            # Defaults to the secretFiles.defaultChangeAction, and any of those values are valid here too.
-            changeAction = "reload";
-
-            # The octal mode of the created secret file (as a string). The
-            # leading 0 is optional and implied of not present.
-            # Defaults to 0400.
-            # NOTE: The owner and group of the file are set based on the
-            # infected service's User= and Group= systemd directives.
-            perms = "0400";
-
-            # Either use an external file as the template:
-            templateFile = ./example.ctmpl;
-
-            # or an embedded string template:
-            template = ''
-                {{ with secret "pki/issue/my-domain-dot-com" "common_name=foo.example.com" }}
-                {{ .Data.certificate }}{{ end }}
-            '';
-        };
+      files."example-f".template = ''
+        {{ with secret "secret/super_secret" }}{{ .Data.f }}{{ end }}
+      '';
     };
   };
 }
 ```
 
-### Hydra
-
-Getting database credentials for Hydra:
-
-```nix
-{
-  detsys.vaultAgent.systemd.services.hydra-init = {
-    enable = true;
-
-    environment.template = ''
-      {{ with secret "postgresql/creds/hydra" }}
-      HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
-      {{ end }}
-    '';
-  };
-}
-```
-
-This will put HYDRA_DBI=xxx into an EnvironmentFile for the `hydra-init` service
-When the credentials are about to expire, the service will restart.
-Care should be taken in this case: `hydra-init`'s lifecycle is expected to start, run briefly, and then shut down.
-This should be allowed normally, and the sidecar should not cause the service to be started again.
-
-Furthermore, hydra-init could potentially run migrations that take _many_ hours.
-Once the connection to the database is open, will it remain open even if the credentials expire?
-Should hydra-init be marked as "reload" or a "none" changeAction?
-If hydra-init is terminated in the middle of a migration no _harm_ is done exactly, however the migration will be rolled back and therefore never complete.
-
-
-### Secret environment variables with an external template file
-
-With a file named `hydra-dbi-env.ctmpl`:
-
-```golang
-{{ with secret "postgresql/creds/hydra" }}
-HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
-{{ end }}
-```
-
-```nix
-{
-    detsys.vaultAgent.systemd.services.prometheus = {
-        enable = true;
-
-        environment.templateFiles."dbi".file = ./hydra-dbi-env.ctmpl;
-    };
-}
-```
-
-
-### Basic Auth for Nginx
-
-```nix
-{
-  detsys.vaultAgent.systemd.services.nginx = {
-    enable = true;
-
-    secretFiles = {
-        defaultChangeAction = "reload";
-        files."basic-auth.conf".template = ''
-            {{ with secret "secrets/nginx-basic-auth"}}
-            {{ .Data.data.htpasswd }}
-            {{ end }}
-        '';
-    };
-  };
-}
-```
-
-### Vault token for Prometheus
-
-```nix
-{
-    detsys.vaultAgent.systemd.services.prometheus = {
-        enable = true;
-
-        secretFiles = {
-            defaultChangeAction = "none";
-            files."vault.token".template = ''
-                {{with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
-            '';
-        };
-    };
-}
-```
-
-### Secret files with an external template file
-
-With a file named `vault-token.ctmpl`:
-
-```golang
-{{ with secret "/auth/token/create" "policies=vault_mon" "no_default_policy=true"}}{{.Auth.ClientToken}}{{ end }}
-```
-
-```nix
-{
-    detsys.vaultAgent.systemd.services.prometheus = {
-        enable = true;
-
-        secretFiles = {
-            defaultChangeAction = "none";
-            files."vault.token".templateFile = ./vault-token.ctmpl;
-        };
-    };
-}
-```
-
-### Default Vault Agent configuration
+#### Default Vault Agent configuration
 
 You can set the default `agentConfig` for all units by using the `detsys.vaultAgent.defaultAgentConfig` interface.
 
 > **NOTE**: Manually-specified unit `agentConfig`s will override _**all**_ of the the settings specified in the `detsys.vaultAgent.defaultAgentConfig` option.
+
+> **NOTE**: Some of these options _must_ be wrapped in a list (e.g. see `auto_auth`) in order for the generated JSON to be valid. Wrapping them all in a list doesn't hurt.
 
 ```nix
 {
@@ -230,11 +157,11 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
 }
 ```
 
-### Accessing the path of a file in `secretFiles`
+#### Accessing the path of a file in `secretFiles`
 
 All `secretFiles.files.<NAME>` expose a `path` attribute, so you don't need to memorize where the secrets are written to:
 
-```
+```nix
 { config, ... }:
 {
   detsys.vaultAgent.systemd.services.prometheus = {
@@ -251,9 +178,10 @@ All `secretFiles.files.<NAME>` expose a `path` attribute, so you don't need to m
 
 You can then access the path to the above `vault.token` secret file via `config.detsys.vaultAgent.systemd.services.prometheus.secretFiles.files."vault.token".path`.
 
-## How to override systemd service configuration
+### How to override systemd service configuration
 
 By using the NixOS module system, it is possible to override the sidecar's systemd service configuration (e.g. to tune how often the service is allowed to restart):
+Sidecar unit names follow the pattern of `detsys-vaultAgent-${service-name}`.
 
 ```nix
 {
@@ -280,33 +208,24 @@ By using the NixOS module system, it is possible to override the sidecar's syste
 }
 ```
 
----
+## Running tests
 
-# Running tests
+We have tests for the module's definition, helpers, and implementation. These can be run like so:
 
-Validate the module's definition passes checks.
-
-```
+```bash
 nix-instantiate --strict --eval --json ./default.nix -A checks.definition
+nix-instantiate --strict --eval --json ./default.nix -A checks.helpers
+nix-build ./default.nix -A checks.implementation
 ```
 
-Or interactively on each change:
-
-```
-git ls-files | entr -s 'nix-instantiate --strict --eval --json ./default.nix -A checks.definition | jq .'
-```
-
-## Tips for writing tests
+### Tips for writing tests
 
 To read the secret file (e.g. to verify the contents), you will need to join the namespace of the sidecar vaultAgent unit:
 
-```
+```bash
 systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-serviceName.service -p PrivateTmp=true cat /tmp/detsys-vault/some-secret-file
 ```
 
-----
+# License
 
-# Known Issues
-
-* the `detsys-vaultAgent-*` unit gets stuck in ExecStartPost if the vault agent dies.
-* "templated" systemd services (e.g. `getty@.service`) are untested, and so we don't know how they will behave
+[MIT](./LICENSE)

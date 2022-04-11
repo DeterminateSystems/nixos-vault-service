@@ -86,7 +86,7 @@ fn get_files_to_monitor(path: PathBuf) -> Result<Vec<PathBuf>> {
     info!("reading {} to find files to monitor", path.display());
     let atlas = File::open(path)?;
     let reader = BufReader::new(atlas);
-    let mut files = vec![];
+    let mut files = Vec::new();
 
     for line in reader.lines() {
         let line = match line {
@@ -108,7 +108,7 @@ fn get_files_to_monitor(path: PathBuf) -> Result<Vec<PathBuf>> {
 
 /// Checks if the files specified by the input `&Vec<PathBuf>` exist and returns
 /// a `Vec<PathBuf>` of files that don't.
-fn check_if_files_exist(files: &Vec<PathBuf>) -> Vec<PathBuf> {
+fn check_if_files_exist(files: &[PathBuf]) -> Vec<PathBuf> {
     let mut not_exists = Vec::new();
 
     for path in files {
@@ -131,7 +131,7 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
     info!("waiting for all files to exist");
     let mut not_exists = paths;
 
-    let backoff_waiter = move || -> Result<(), backoff::Error<&str>> {
+    let backoff_waiter = || -> Result<(), backoff::Error<&str>> {
         not_exists = self::check_if_files_exist(&not_exists);
 
         if not_exists.is_empty() {
@@ -140,7 +140,7 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
         } else {
             info!("still waiting for some files to exist: {:?}", not_exists);
             Err(backoff::Error::transient(
-                "still waiting for some files to exist".into(),
+                "still waiting for some files to exist",
             ))
         }
     };

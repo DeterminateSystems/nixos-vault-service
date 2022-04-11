@@ -160,6 +160,7 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
 mod tests {
     #[test]
     fn test_check_if_files_exist() {
+        let _ = env_logger::builder().is_test(true).try_init();
         let temp_dir = tempfile::tempdir().unwrap();
         let files = vec![
             temp_dir.path().join("file1"),
@@ -176,5 +177,31 @@ mod tests {
 
         let not_exist = super::check_if_files_exist(&files);
         assert!(not_exist.is_empty());
+    }
+
+    #[test]
+    fn test_backoff_until_files_exist() {
+        let _ = env_logger::builder().is_test(true).try_init();
+        let temp_dir = tempfile::tempdir().unwrap();
+        let files = vec![
+            temp_dir.path().join("file1"),
+            temp_dir.path().join("file2"),
+            temp_dir.path().join("file3"),
+        ];
+
+        let backoff_files = files.clone();
+        let backoff_thread = std::thread::spawn(|| {
+            assert!(super::backoff_until_files_exist(backoff_files).is_ok());
+        });
+
+        // Wait for 50ms so that the backoff functionality has time to see that
+        // the files don't exist and wait at least once.
+        std::thread::sleep(std::time::Duration::from_millis(50));
+
+        for file in &files {
+            std::fs::File::create(file).unwrap();
+        }
+
+        assert!(backoff_thread.join().is_ok());
     }
 }

@@ -59,7 +59,7 @@ fn main() -> Result<()> {
             // TODO: maybe make the agent run something that will signal the messenger that the files exist, instead of waiting for them:
             // Something to consider is the agent could run something to signal messenger instead of waiting for the files to exist.
             // Then the messenger could restart etc. the target services only if it has finished startup.
-            self::wait_for_files_to_exist(files)?;
+            self::backoff_until_files_exist(files)?;
 
             sd_notify::notify(false, &[NotifyState::Ready])?;
 
@@ -106,23 +106,33 @@ fn get_files_to_monitor(path: PathBuf) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
+/// Checks if the files specified by the input `&Vec<PathBuf>` exist and returns
+/// a `Vec<PathBuf>` of files that don't.
+fn check_if_files_exist(files: &Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut not_exists = Vec::new();
+
+    for path in files {
+        trace!("checking if {} exists", path.display());
+
+        if path.exists() {
+            trace!("{} exists", path.display());
+        } else {
+            trace!("{} does not exist", path.display());
+            not_exists.push(path.clone());
+        }
+    }
+
+    not_exists
+}
+
 /// Uses [`backoff::ExponentialBackoff`] to wait for all listed files to exist,
 /// up to a maximum of 15 minutes.
-fn wait_for_files_to_exist(paths: Vec<PathBuf>) -> Result<()> {
+fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
     info!("waiting for all files to exist");
-    let mut exists = Vec::new();
     let mut not_exists = paths;
 
-    let backoff_waiter = || -> Result<(), backoff::Error<&str>> {
-        for path in &not_exists {
-            trace!("checking if {} exists", path.display());
-            if path.exists() {
-                trace!("{} exists", path.display());
-                exists.push(path.clone());
-            }
-        }
-
-        not_exists.retain(|path| !exists.contains(&path));
+    let backoff_waiter = move || -> Result<(), backoff::Error<&str>> {
+        not_exists = self::check_if_files_exist(&not_exists);
 
         if not_exists.is_empty() {
             info!("all files exist");
@@ -130,7 +140,7 @@ fn wait_for_files_to_exist(paths: Vec<PathBuf>) -> Result<()> {
         } else {
             info!("still waiting for some files to exist: {:?}", not_exists);
             Err(backoff::Error::transient(
-                "still waiting for files to exist".into(),
+                "still waiting for some files to exist".into(),
             ))
         }
     };

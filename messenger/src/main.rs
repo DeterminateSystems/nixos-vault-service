@@ -155,3 +155,26 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
     backoff::retry_notify(backoff, backoff_waiter, backoff_notify)
         .map_err(|_| "files did not exist in a timely fashion".into())
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_check_if_files_exist() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let files = vec![
+            temp_dir.path().join("file1"),
+            temp_dir.path().join("file2"),
+            temp_dir.path().join("file3"),
+        ];
+
+        let not_exist = super::check_if_files_exist(&files);
+        assert_eq!(files, not_exist);
+
+        for file in &files {
+            std::fs::File::create(file).unwrap();
+        }
+
+        let not_exist = super::check_if_files_exist(&files);
+        assert!(not_exist.is_empty());
+    }
+}

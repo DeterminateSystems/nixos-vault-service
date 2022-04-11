@@ -1,12 +1,14 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::Command;
 
 use backoff::ExponentialBackoff;
 use clap::{AppSettings, Parser};
-use log::{error, info, trace, LevelFilter};
 use sd_notify::NotifyState;
+use tracing::{error, info, trace};
+use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::{fmt, prelude::*};
 
 type Result<T, E = Box<dyn std::error::Error>> = core::result::Result<T, E>;
 
@@ -34,17 +36,21 @@ struct Cli {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    env_logger::Builder::new()
-        .format(|buf, record| writeln!(buf, "{:<5} {}", record.level(), record.args()))
-        .filter(
-            Some(env!("CARGO_PKG_NAME")), // only log for this
+    let filter_layer = EnvFilter::builder()
+        .with_default_directive(
             match cli.verbosity {
-                0 => LevelFilter::Warn,
-                1 => LevelFilter::Info,
-                2 => LevelFilter::Debug,
-                _ => LevelFilter::Trace,
-            },
+                0 => LevelFilter::WARN,
+                1 => LevelFilter::INFO,
+                2 => LevelFilter::DEBUG,
+                _ => LevelFilter::TRACE,
+            }
+            .into(),
         )
+        .from_env_lossy();
+
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(filter_layer)
         .try_init()?;
 
     let mut command = Command::new(cli.vault_binary);
@@ -158,9 +164,11 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use tracing_test::traced_test;
+
     #[test]
+    #[traced_test]
     fn test_check_if_files_exist() {
-        let _ = env_logger::builder().is_test(true).try_init();
         let temp_dir = tempfile::tempdir().unwrap();
         let files = vec![
             temp_dir.path().join("file1"),
@@ -180,8 +188,8 @@ mod tests {
     }
 
     #[test]
+    #[traced_test]
     fn test_backoff_until_files_exist() {
-        let _ = env_logger::builder().is_test(true).try_init();
         let temp_dir = tempfile::tempdir().unwrap();
         let files = vec![
             temp_dir.path().join("file1"),

@@ -1,6 +1,9 @@
 { pkgs, lib, config, ... }:
 let
   helpers = import ./helpers.nix { inherit lib; };
+
+  messenger = pkgs.callPackage ../messenger { };
+
   inherit (helpers)
     mkScopedMerge
     renderAgentConfig
@@ -69,15 +72,30 @@ let
         PrivateTmp = lib.mkDefault true;
         Restart = lib.mkDefault "on-failure";
         RestartSec = lib.mkDefault 5;
+        Type = "notify";
 
-        ExecStart = "${pkgs.vault}/bin/vault agent -config ${agentCfgFile}";
         ExecStartPre = precreateDirectories serviceName
           ({ }
             // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
-        ExecStartPost = waitFor serviceName
-          (map (path: { prefix = environmentFilesRoot; inherit (path) destination perms; }) agentConfig.environmentFileTemplates
-            ++ map (path: { prefix = secretFilesRoot; inherit (path) destination perms; }) agentConfig.secretFileTemplates);
+
+        ExecStart =
+          let
+            filesToMonitor = pkgs.writeText "files-to-monitor"
+              (builtins.concatStringsSep "\n"
+                (map (path: path.destination) agentConfig.environmentFileTemplates
+                  ++ map (path: path.destination) agentConfig.secretFileTemplates));
+          in
+          builtins.concatStringsSep " " [
+            "${messenger}/bin/messenger"
+            "--vault-binary"
+            "${pkgs.vault}/bin/vault"
+            "--agent-config"
+            agentCfgFile
+            "--files-to-monitor"
+            filesToMonitor
+            "-vvvv"
+          ];
       };
 
     };

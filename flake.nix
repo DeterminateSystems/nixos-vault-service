@@ -63,13 +63,13 @@
         );
 
       checks.definition = import ./module/definition.tests.nix {
+        inherit nixpkgs;
         inherit (nixpkgs) lib;
-        path = "${nixpkgs}";
       };
 
       checks.helpers = import ./module/helpers.tests.nix {
+        inherit nixpkgs;
         inherit (nixpkgs) lib;
-        path = "${nixpkgs}";
       };
 
       checks.implementation = import ./module/implementation.tests.nix {

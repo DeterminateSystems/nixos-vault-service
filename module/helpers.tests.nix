@@ -1,4 +1,4 @@
-{ path, lib, ... }:
+{ nixpkgs, lib, ... }:
 let
   helpers = import ./helpers.nix { inherit lib; };
   suite = { ... } @ tests:
@@ -13,7 +13,7 @@ with
     evalCfg = config:
       (lib.evalModules {
         modules = [
-          "${path}/nixos/modules/misc/assertions.nix"
+          "${nixpkgs}/nixos/modules/misc/assertions.nix"
           ./mock-systemd-module.nix
           ./definition.nix
           config

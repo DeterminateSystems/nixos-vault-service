@@ -56,7 +56,6 @@ let
 
       wantedBy = [ fullServiceName ];
       before = [ fullServiceName ];
-      bindsTo = [ fullServiceName ];
 
       # Needs getent in PATH
       path = [ pkgs.glibc ];
@@ -89,6 +88,7 @@ let
     in
     {
       after = [ sidecarServiceName ];
+      bindsTo = [ sidecarServiceName ];
       unitConfig = {
         JoinsNamespaceOf = sidecarServiceName;
       };

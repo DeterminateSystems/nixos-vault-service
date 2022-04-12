@@ -34,13 +34,7 @@
 
       packages = forAllSystems
         ({ pkgs, ... }: {
-          messenger = pkgs.rustPlatform.buildRustPackage {
-            pname = "messenger";
-            version = (lib.importTOML ./messenger/Cargo.toml).package.version;
-
-            src = "${self}/messenger";
-            cargoLock.lockFile = ./messenger/Cargo.lock;
-          };
+          messenger = pkgs.callPackage ./messenger { };
         });
 
       defaultPackage = forAllSystems

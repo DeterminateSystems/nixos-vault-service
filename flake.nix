@@ -23,12 +23,28 @@
           inherit system;
           pkgs = pkgsFor nixpkgs system;
         });
+
+      inherit (nixpkgs) lib;
     in
     {
       nixosModule = self.nixosModules.nixos-vault-service;
       nixosModules = {
         nixos-vault-service = import ./module/implementation.nix;
       };
+
+      packages = forAllSystems
+        ({ pkgs, ... }: {
+          messenger = pkgs.rustPlatform.buildRustPackage {
+            pname = "messenger";
+            version = (lib.importTOML ./messenger/Cargo.toml).package.version;
+
+            src = "${self}/messenger";
+            cargoLock.lockFile = ./messenger/Cargo.lock;
+          };
+        });
+
+      defaultPackage = forAllSystems
+        ({ system, ... }: self.packages.${system}.messenger);
 
       devShell = forAllSystems
         ({ pkgs, ... }:

@@ -17,5 +17,6 @@ formatting / testing / etc.
   * `nix-instantiate --strict --eval --json ./default.nix -A checks.definition`
   * `nix-instantiate --strict --eval --json ./default.nix -A checks.helpers`
   * `nix-build ./default.nix -A checks.implementation`
+  * `cargo test --manifest-path ./messenger/Cargo.toml`
 - [ ] Added or updated relevant tests (leave unchecked if not applicable)
 - [ ] Added or updated relevant documentation (leave unchecked if not applicable)

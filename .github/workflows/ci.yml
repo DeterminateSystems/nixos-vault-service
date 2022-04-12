@@ -76,3 +76,26 @@ jobs:
         with:
           fetch-depth: 0
       - uses: greut/eclint-action@v0
+
+  RustFmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v17
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Check rustfmt
+        working-directory: ./messenger
+        run: nix develop --command cargo fmt -- --check
+
+  RustBuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v17
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: Build messenger
+        run: nix build .#messenger -L

@@ -34,13 +34,7 @@
 
       packages = forAllSystems
         ({ pkgs, ... }: {
-          messenger = pkgs.rustPlatform.buildRustPackage {
-            pname = "messenger";
-            version = (lib.importTOML ./messenger/Cargo.toml).package.version;
-
-            src = "${self}/messenger";
-            cargoLock.lockFile = ./messenger/Cargo.lock;
-          };
+          messenger = pkgs.callPackage ./messenger { };
         });
 
       defaultPackage = forAllSystems
@@ -63,13 +57,13 @@
         );
 
       checks.definition = import ./module/definition.tests.nix {
+        inherit nixpkgs;
         inherit (nixpkgs) lib;
-        path = "${nixpkgs}";
       };
 
       checks.helpers = import ./module/helpers.tests.nix {
+        inherit nixpkgs;
         inherit (nixpkgs) lib;
-        path = "${nixpkgs}";
       };
 
       checks.implementation = import ./module/implementation.tests.nix {

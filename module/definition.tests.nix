@@ -1,4 +1,4 @@
-{ path, lib, ... }:
+{ nixpkgs, lib, ... }:
 let
   suite = { ... } @ tests:
     (builtins.mapAttrs
@@ -12,7 +12,7 @@ with
     evalCfg = config:
       (lib.evalModules {
         modules = [
-          "${path}/nixos/modules/misc/assertions.nix"
+          "${nixpkgs}/nixos/modules/misc/assertions.nix"
           ./mock-systemd-module.nix
           ./definition.nix
           config

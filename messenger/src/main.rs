@@ -71,8 +71,8 @@ fn main() -> Result<()> {
 
             let status = child.wait()?;
             if let Some(errno) = status.code() {
-                let errno = errno.try_into()?;
-                sd_notify::notify(false, &[NotifyState::Errno(errno)])?;
+                sd_notify::notify(false, &[NotifyState::Errno(errno.try_into()?)])?;
+                std::process::exit(errno);
             }
         }
         Err(err) => {

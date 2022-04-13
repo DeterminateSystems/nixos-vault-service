@@ -80,18 +80,10 @@ rec {
                 ]);
             destination = path;
             inherit perms;
-          } //
-          (
-            if template != null
-            then {
-              contents = template;
-            }
-            else if templateFile != null
-            then {
-              source = templateFile;
-            }
-            else throw ""
-          ))
+          }
+          // lib.optionalAttrs (template != null) { contents = template; }
+          // lib.optionalAttrs (templateFile != null) { source = templateFile; }
+        )
         cfg.secretFiles.files;
     in
     {

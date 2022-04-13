@@ -163,7 +163,7 @@ in
               }
               {
                 assertion = !(secretFileConfig.templateFile != null && secretFileConfig.template != null);
-                message = "detsys.vaultAgent.systemd.services.${serviceName}.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive.";
+                message = "detsys.vaultAgent.systemd.services.${serviceName}.secretFiles.${secretFileName}: Both 'templateFile' and 'template' options are specified, but they are mutually exclusive.";
               }
             ])
             serviceConfig.secretFiles.files);

@@ -11,10 +11,8 @@ rec {
           (v:
             lib.mkIf
               (lib.hasAttrByPath attr v)
-              (lib.getAttrFromPath attr v)
-          )
-          values
-        );
+              (lib.getAttrFromPath attr v))
+          values);
 
       pluckFuncs = attrs: values:
         lib.mkMerge (builtins.map
@@ -22,8 +20,7 @@ rec {
           attrs);
 
     in
-    values:
-    pluckFuncs attrs values;
+    pluckFuncs attrs;
 
   renderAgentConfig = targetService: targetServiceConfig: cfg: defaultAgentConfig:
     let
@@ -46,30 +43,26 @@ rec {
           changeCommand = mkCommand cfg.environment.changeAction;
         in
         (lib.optional (cfg.environment.template != null)
-          (
-            {
-              destination = "${environmentFilesRoot}${targetService}/EnvFile";
-              contents = cfg.environment.template;
-              inherit (cfg.environment) perms;
-            } // lib.optionalAttrs (changeCommand != null) {
-              command = changeCommand;
-            }
-          ))
+          ({
+            destination = "${environmentFilesRoot}${targetService}/EnvFile";
+            contents = cfg.environment.template;
+            inherit (cfg.environment) perms;
+          } // lib.optionalAttrs (changeCommand != null) {
+            command = changeCommand;
+          }))
         ++ (lib.mapAttrsToList
           (name: { file, perms }:
-            (
-              {
-                destination = "${environmentFilesRoot}${targetService}/${name}.EnvFile";
-                source = file;
-                inherit perms;
-              } // lib.optionalAttrs (changeCommand != null) {
-                command = changeCommand;
-              }
-            ))
+            ({
+              destination = "${environmentFilesRoot}${targetService}/${name}.EnvFile";
+              source = file;
+              inherit perms;
+            } // lib.optionalAttrs (changeCommand != null) {
+              command = changeCommand;
+            }))
           cfg.environment.templateFiles);
 
       secretFileTemplates = lib.mapAttrsToList
-        (name: { changeAction, templateFile, template, perms, path }:
+        (_name: { changeAction, templateFile, template, perms, path }:
           rec {
             command =
               let
@@ -98,8 +91,7 @@ rec {
               source = templateFile;
             }
             else throw ""
-          )
-        )
+          ))
         cfg.secretFiles.files;
     in
     {

@@ -1,10 +1,8 @@
 { pkgs, lib, config, ... }:
 let
-  helpers = import ./helpers.nix { inherit lib; };
-
   messenger = pkgs.callPackage ../messenger { };
 
-  inherit (helpers)
+  inherit (import ./helpers.nix { inherit lib; })
     mkScopedMerge
     renderAgentConfig
     secretFilesRoot
@@ -56,8 +54,7 @@ let
         Type = "notify";
 
         ExecStartPre = precreateDirectories serviceName
-          ({ }
-            // lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
+          (lib.optionalAttrs (systemdServiceConfig ? User) { user = systemdServiceConfig.User; }
             // lib.optionalAttrs (systemdServiceConfig ? Group) { group = systemdServiceConfig.Group; });
 
         ExecStart =

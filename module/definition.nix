@@ -10,7 +10,7 @@ let
     secretFilesRoot
     ;
 
-  vaultAgentModule = { config, ... }: {
+  vaultAgentModule = { ... }: {
     options = {
       enable = mkEnableOption "vaultAgent";
 
@@ -76,7 +76,7 @@ let
     };
   };
 
-  vaultAgentEnvironmentFileModule = { config, ... }: {
+  vaultAgentEnvironmentFileModule = { ... }: {
     options = {
       file = mkOption {
         description = "A consul-template file which produces EnvironmentFile-compatible output.";
@@ -93,7 +93,7 @@ let
     };
   };
 
-  vaultAgentSecretFilesModule = { name, config, ... }: {
+  vaultAgentSecretFilesModule = { name, ... }: {
     options = {
       changeAction = mkOption {
         description = ''
@@ -171,7 +171,7 @@ in
         config.detsys.vaultAgent.systemd.services))
     (mkScopedMerge [ [ "assertions" ] ]
       (lib.mapAttrsToList
-        (serviceName: serviceConfig: {
+        (serviceName: _serviceConfig: {
           assertions = [
             {
               assertion =

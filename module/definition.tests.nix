@@ -151,7 +151,7 @@ suite {
   secretMutuallyExclusiveTemplates = expectAssertsWarns
     {
       assertions = [
-        "detsys.vaultAgent.systemd.services.secret-template.secretFiles.example: Both 'templateFile' and 'template' options must be specified, but they are mutually exclusive."
+        "detsys.vaultAgent.systemd.services.secret-template.secretFiles.example: Both 'templateFile' and 'template' options are specified, but they are mutually exclusive."
       ];
     }
     {

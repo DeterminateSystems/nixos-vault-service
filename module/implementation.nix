@@ -26,25 +26,6 @@ let
       )
     '';
 
-  waitFor = serviceName: files:
-    let
-      waiter = lib.concatMapStringsSep "\n"
-        (file:
-          ''
-            if [ ! -f ${lib.escapeShellArg file.destination} ]; then
-              echo Waiting for ${lib.escapeShellArg file.destination} to exist...
-              (while [ ! -f ${lib.escapeShellArg file.destination} ]; do sleep 1; done) &
-            fi
-          '')
-        files;
-    in
-    pkgs.writeShellScript "wait-for-${serviceName}" ''
-      set -eux
-      ${waiter}
-      wait
-    '';
-
-
   makeAgentService = { serviceName, agentConfig, systemdUnitConfig }:
     let
       fullServiceName = "${serviceName}.service";

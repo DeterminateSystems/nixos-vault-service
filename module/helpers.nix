@@ -22,7 +22,7 @@ rec {
     in
     pluckFuncs attrs;
 
-  renderAgentConfig = targetService: targetServiceConfig: cfg: defaultAgentConfig:
+  renderAgentConfig = targetService: targetServiceConfig: cfg:
     let
       mkCommand = requestedAction:
         let
@@ -100,15 +100,7 @@ rec {
         (tpl: tpl.destination)
         secretFileTemplates;
 
-      agentConfig =
-        let
-          conf =
-            if cfg.agentConfig != null then
-              cfg.agentConfig
-            else
-              defaultAgentConfig;
-        in
-        conf // {
+      agentConfig = cfg.agentConfig // {
           template = environmentFileTemplates
           ++ secretFileTemplates;
         };

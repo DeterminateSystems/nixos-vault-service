@@ -104,7 +104,7 @@ in
       (lib.mapAttrsToList
         (serviceName: serviceConfig:
           let
-            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig config.detsys.vaultAgent.defaultAgentConfig;
+            agentConfig = renderAgentConfig serviceName config.systemd.services.${serviceName} serviceConfig;
           in
           {
             systemd.services = {
@@ -124,19 +124,11 @@ in
           assertions = [
             {
               assertion =
-                let
-                  agentConfig =
-                    if serviceConfig.agentConfig != null
-                    then
-                      serviceConfig.agentConfig
-                    else
-                      config.detsys.vaultAgent.defaultAgentConfig;
-                in
-                agentConfig ? template_config
+                serviceConfig.agentConfig ? template_config
                 && lib.all lib.id
                   (map
                     (cfg: cfg ? exit_on_retry_failure && cfg.exit_on_retry_failure)
-                    agentConfig.template_config);
+                    serviceConfig.agentConfig.template_config);
               message = ''
                 detsys.vaultAgent.systemd.services.${serviceName}:
                     The agent config does not specify template_config.exit_on_retry_failure or has

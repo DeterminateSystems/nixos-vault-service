@@ -16,8 +16,8 @@ let
 
       agentConfig = mkOption {
         description = "Vault agent configuration. The only place to specify vault and auto_auth config. To be replaced.";
-        type = types.nullOr (types.attrsOf types.unspecified);
-        default = null;
+        type = types.attrsOf types.unspecified;
+        default = config.detsys.vaultAgent.defaultAgentConfig;
       };
 
       # !!! should this be a submodule?

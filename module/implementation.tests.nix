@@ -546,7 +546,6 @@ in
       machine.wait_for_file("/secret_id")
       machine.systemctl("start --no-block example")
       machine.succeed("sleep 3")
-      machine.succeed("pkill -f messenger")
       print(machine.fail("systemctl status detsys-vaultAgent-example"))
       if "dead" not in machine.succeed("systemctl show -p SubState --value example"):
           raise Exception("unit shouldn't have even started if the sidecar unit failed")

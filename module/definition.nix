@@ -10,13 +10,15 @@ let
     secretFilesRoot
     ;
 
+  agentConfigType = types.attrsOf types.unspecified;
+
   vaultAgentModule = { ... }: {
     options = {
       enable = mkEnableOption "vaultAgent";
 
       agentConfig = mkOption {
-        description = "Vault agent configuration. The only place to specify vault and auto_auth config. To be replaced.";
-        type = types.attrsOf types.unspecified;
+        description = "Vault agent configuration. The only place to specify vault and auto_auth config.";
+        type = agentConfigType;
         default = config.detsys.vaultAgent.defaultAgentConfig;
       };
 
@@ -141,7 +143,7 @@ in
   options.detsys.vaultAgent = {
     defaultAgentConfig = mkOption {
       description = "Default Vault agent configuration. Defers to individual <code>agentConfig</code>s, if set.";
-      type = types.attrsOf types.unspecified;
+      type = agentConfigType;
       default = { };
     };
 

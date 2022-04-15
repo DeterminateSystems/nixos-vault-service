@@ -44,7 +44,7 @@ let
   };
 in
 {
-  imports = [ "${vaultModuleSrc}/module/implementation" ];
+  imports = [ "${vaultModuleSrc}/module/implementation.nix" ];
 }
 ```
 

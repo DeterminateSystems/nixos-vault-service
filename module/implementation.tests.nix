@@ -66,6 +66,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -107,6 +108,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -163,6 +165,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -223,6 +226,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -269,6 +273,9 @@ in
               type = "approle";
             }];
           }];
+          template_config = [{
+            exit_on_retry_failure = true;
+          }];
         };
 
         secretFiles.files."token" = {
@@ -310,6 +317,9 @@ in
                 secret_id_file_path = "/secret_id";
               }];
             }];
+          }];
+          template_config = [{
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -385,6 +395,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -446,6 +457,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -556,6 +568,7 @@ in
         }];
         template_config = [{
           static_secret_render_interval = "5s";
+          exit_on_retry_failure = true;
         }];
       };
 
@@ -600,6 +613,7 @@ in
           }];
           template_config = [{
             static_secret_render_interval = "1s";
+            exit_on_retry_failure = true;
           }];
         };
 
@@ -664,6 +678,7 @@ in
         }];
         template_config = [{
           static_secret_render_interval = "5s";
+          exit_on_retry_failure = true;
         }];
       };
 

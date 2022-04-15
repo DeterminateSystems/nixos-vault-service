@@ -9,7 +9,7 @@ use clap::{AppSettings, Parser};
 use futures::future::FutureExt;
 use sd_notify::NotifyState;
 use tracing::{error, info, trace};
-use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::filter::{EnvFilter, LevelFilter, Targets};
 use tracing_subscriber::{fmt, prelude::*};
 
 type Result<T, E = Box<dyn std::error::Error>> = core::result::Result<T, E>;
@@ -39,7 +39,8 @@ struct Cli {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let filter_layer = EnvFilter::builder()
+    let crate_filter = Targets::default().with_target(env!("CARGO_PKG_NAME"), LevelFilter::TRACE);
+    let env_filter = EnvFilter::builder()
         .with_default_directive(
             match cli.verbosity {
                 0 => LevelFilter::WARN,
@@ -53,7 +54,8 @@ async fn main() -> Result<()> {
 
     tracing_subscriber::registry()
         .with(fmt::layer())
-        .with(filter_layer)
+        .with(env_filter)
+        .with(crate_filter)
         .try_init()?;
 
     let mut command = Command::new(cli.vault_binary);

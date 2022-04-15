@@ -29,16 +29,27 @@
     {
       nixosModule = self.nixosModules.nixos-vault-service;
       nixosModules = {
-        nixos-vault-service = import ./module/implementation.nix;
+        nixos-vault-service = {
+          imports = [
+            ./module/implementation.nix
+          ];
+
+          nixpkgs.overlays = [
+            self.overlays.default
+          ];
+        };
       };
 
       packages = forAllSystems
-        ({ pkgs, ... }: {
+        ({ pkgs, ... }: rec {
           messenger = pkgs.callPackage ./messenger { };
+
+          default = messenger;
         });
 
-      defaultPackage = forAllSystems
-        ({ system, ... }: self.packages.${system}.messenger);
+      overlays.default = final: prev: {
+        detsys-messenger = self.packages.${final.stdenv.system}.messenger;
+      };
 
       devShell = forAllSystems
         ({ pkgs, ... }:
@@ -67,7 +78,7 @@
       };
 
       checks.implementation = import ./module/implementation.tests.nix {
-        inherit nixpkgs;
+        inherit nixpkgs self;
         inherit (nixpkgs) lib;
       };
     };

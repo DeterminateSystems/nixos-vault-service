@@ -1,4 +1,4 @@
-{ nixpkgs, lib, ... }:
+{ nixpkgs, self, lib, ... }:
 let
   testTools = import (nixpkgs + "/nixos/lib/testing-python.nix") { system = "x86_64-linux"; };
   mkTest = config: testScript:
@@ -6,7 +6,7 @@ let
       inherit testScript;
       machine = { pkgs, ... }: {
         imports = [
-          ./implementation.nix
+          self.nixosModule
           config
         ];
 

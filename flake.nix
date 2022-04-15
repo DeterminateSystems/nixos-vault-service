@@ -48,7 +48,7 @@
         });
 
       overlays.default = final: prev: {
-        messenger = self.packages.${final.stdenv.system}.messenger;
+        detsys-messenger = self.packages.${final.stdenv.system}.messenger;
       };
 
       devShell = forAllSystems

@@ -63,7 +63,7 @@ let
                   ++ map (path: path.destination) agentConfig.secretFileTemplates));
           in
           builtins.concatStringsSep " " [
-            "${pkgs.messenger}/bin/messenger"
+            "${pkgs.detsys-messenger}/bin/messenger"
             "--vault-binary"
             "${pkgs.vault}/bin/vault"
             "--agent-config"

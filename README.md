@@ -42,9 +42,11 @@ let
     url = "https://github.com/DeterminateSystems/nixos-vault-service.git";
     ref = "main";
   };
+
+  vaultModule = import vaultModuleSrc;
 in
 {
-  imports = [ "${vaultModuleSrc}/module/implementation.nix" ];
+  imports = [ vaultModule.nixosModule ];
 }
 ```
 

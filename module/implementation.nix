@@ -1,7 +1,5 @@
 { pkgs, lib, config, ... }:
 let
-  messenger = pkgs.callPackage ../messenger { };
-
   inherit (import ./helpers.nix { inherit lib; })
     mkScopedMerge
     renderAgentConfig
@@ -65,7 +63,7 @@ let
                   ++ map (path: path.destination) agentConfig.secretFileTemplates));
           in
           builtins.concatStringsSep " " [
-            "${messenger}/bin/messenger"
+            "${pkgs.messenger}/bin/messenger"
             "--vault-binary"
             "${pkgs.vault}/bin/vault"
             "--agent-config"

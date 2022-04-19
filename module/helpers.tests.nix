@@ -56,6 +56,8 @@ with
     { }
     { }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [ ];
     };
 
@@ -69,6 +71,8 @@ with
       '';
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "systemctl try-restart 'example.service'";
@@ -89,6 +93,8 @@ with
       environment.templateFiles."example-a".file = ./helpers.tests.nix;
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "systemctl try-restart 'example.service'";
@@ -108,6 +114,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "systemctl stop 'example.service'";
@@ -127,6 +135,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
@@ -145,6 +155,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "systemctl try-restart 'example.service'";
@@ -170,6 +182,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "systemctl try-restart 'example.service'";
@@ -192,6 +206,8 @@ with
       secretFiles.files."example".template = "FOO=BAR";
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
@@ -208,6 +224,8 @@ with
       secretFiles.files."example".templateFile = ./helpers.tests.nix;
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
@@ -227,6 +245,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example';systemctl try-reload-or-restart 'example.service'";
@@ -251,6 +271,8 @@ with
       };
     }
     {
+      auto_auth = [ ];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
@@ -272,22 +294,16 @@ with
     {
       agentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
-        auto_auth = [
-          {
-            method = [
-              {
-                config = [
-                  {
-                    remove_secret_id_file_after_reading = false;
-                    role_id_file_path = "role_id";
-                    secret_id_file_path = "secret_id";
-                  }
-                ];
-                type = "approle";
-              }
-            ];
-          }
-        ];
+        auto_auth = [{
+          method = [{
+            config = [{
+              remove_secret_id_file_after_reading = false;
+              role_id_file_path = "role_id";
+              secret_id_file_path = "secret_id";
+            }];
+            type = "approle";
+          }];
+        }];
       };
       secretFiles = {
         defaultChangeAction = "reload";
@@ -301,22 +317,17 @@ with
     }
     {
       vault = [{ address = "http://127.0.0.1:8200"; }];
-      auto_auth = [
-        {
-          method = [
-            {
-              config = [
-                {
-                  remove_secret_id_file_after_reading = false;
-                  role_id_file_path = "role_id";
-                  secret_id_file_path = "secret_id";
-                }
-              ];
-              type = "approle";
-            }
-          ];
-        }
-      ];
+      auto_auth = [{
+        method = [{
+          config = [{
+            remove_secret_id_file_after_reading = false;
+            role_id_file_path = "role_id";
+            secret_id_file_path = "secret_id";
+          }];
+          type = "approle";
+        }];
+      }];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
@@ -370,6 +381,7 @@ with
           type = "approle";
         }];
       }];
+      template_config.exit_on_retry_failure = true;
       template = [
         {
           command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";

@@ -10,7 +10,57 @@ let
     secretFilesRoot
     ;
 
-  agentConfigType = types.attrsOf types.unspecified;
+  autoAuthMethodModule = types.submodule {
+    freeformType = types.attrsOf types.unspecified;
+
+    options = {
+      type = mkOption {
+        type = types.str;
+      };
+
+      config = mkOption {
+        type = types.attrsOf types.unspecified;
+      };
+    };
+  };
+
+  autoAuthModule = types.submodule {
+    freeformType = types.attrsOf types.unspecified;
+
+    options = {
+      method = mkOption {
+        type = types.listOf autoAuthMethodModule;
+        default = [ ];
+      };
+    };
+  };
+
+  templateConfigModule = types.submodule {
+    freeformType = types.attrsOf types.unspecified;
+
+    options = {
+      exit_on_retry_failure = mkOption {
+        type = types.bool;
+        default = true;
+      };
+    };
+  };
+
+  agentConfigType = types.submodule {
+    freeformType = types.attrsOf types.unspecified;
+
+    options = {
+      auto_auth = mkOption {
+        type = autoAuthModule;
+        default = { };
+      };
+
+      template_config = mkOption {
+        type = templateConfigModule;
+        default = { };
+      };
+    };
+  };
 
   vaultAgentModule = { ... }: {
     options = {

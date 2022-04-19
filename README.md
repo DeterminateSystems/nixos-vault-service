@@ -152,9 +152,9 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
         type = "approle";
       }];
     }];
-    template_config = [{
+    template_config = {
       static_secret_render_interval = "5s";
-    }];
+    };
   };
 }
 ```

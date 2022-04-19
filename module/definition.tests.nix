@@ -210,10 +210,10 @@ suite {
           type = "approle";
         }];
       }];
-      template_config = [{
+      template_config = {
         static_secret_render_interval = "5s";
         exit_on_retry_failure = true;
-      }];
+      };
     };
   };
 }

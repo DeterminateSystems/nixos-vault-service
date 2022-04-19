@@ -223,13 +223,13 @@ suite {
         assertions = [
           ''
             detsys.vaultAgent.systemd.services.global-config:
-                The agent config does not specify template_config.exit_on_retry_failure or has
-                it set to false. This is not supported.
+                The agent config has template_config.exit_on_retry_failure
+                set to false. This is not supported.
           ''
           ''
             detsys.vaultAgent.defaultAgentConfig:
-                The default agent config does not specify template_config.exit_on_retry_failure
-                or has it set to false. This is not supported.
+                The default agent config has template_config.exit_on_retry_failure
+                set to false. This is not supported.
           ''
         ];
       }
@@ -264,8 +264,8 @@ suite {
         assertions = [
           ''
             detsys.vaultAgent.systemd.services.test:
-                The agent config does not specify template_config.exit_on_retry_failure or has
-                it set to false. This is not supported.
+                The agent config has template_config.exit_on_retry_failure
+                set to false. This is not supported.
           ''
         ];
       }

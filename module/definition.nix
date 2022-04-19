@@ -249,8 +249,8 @@ in
                 serviceConfig.agentConfig.template_config.exit_on_retry_failure;
               message = ''
                 detsys.vaultAgent.systemd.services.${serviceName}:
-                    The agent config does not specify template_config.exit_on_retry_failure or has
-                    it set to false. This is not supported.
+                    The agent config has template_config.exit_on_retry_failure
+                    set to false. This is not supported.
               '';
             }
           ];
@@ -263,8 +263,8 @@ in
             config.detsys.vaultAgent.defaultAgentConfig.template_config.exit_on_retry_failure;
           message = ''
             detsys.vaultAgent.defaultAgentConfig:
-                The default agent config does not specify template_config.exit_on_retry_failure
-                or has it set to false. This is not supported.
+                The default agent config has template_config.exit_on_retry_failure
+                set to false. This is not supported.
           '';
         }
       ];

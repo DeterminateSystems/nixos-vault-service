@@ -54,20 +54,19 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         environment.template = ''
@@ -96,20 +95,19 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."rand_bytes".template = ''
@@ -153,20 +151,19 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."slow" = {
@@ -214,20 +211,19 @@ in
       detsys.vaultAgent.systemd.services.nginx = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."prometheus-basic-auth" = {
@@ -263,19 +259,16 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."token" = {
@@ -308,19 +301,16 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
               type = "approle";
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
             }];
-          }];
-          template_config = [{
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         environment.template = ''
@@ -383,20 +373,19 @@ in
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         environment.template = ''
@@ -445,20 +434,19 @@ in
           vault = [{
             address = "http://127.0.0.1:8200";
           }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
               type = "approle";
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."rand_bytes" = {
@@ -513,20 +501,19 @@ in
             address = "http://127.0.0.1:8200";
             retry.num_retries = 1;
           }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         environment.template = ''
@@ -555,20 +542,19 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.defaultAgentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
-        auto_auth = [{
+        auto_auth = {
           method = [{
-            config = [{
+            config = {
               remove_secret_id_file_after_reading = false;
               role_id_file_path = "/role_id";
               secret_id_file_path = "/secret_id";
-            }];
+            };
             type = "approle";
           }];
-        }];
-        template_config = [{
+        };
+        template_config = {
           static_secret_render_interval = "5s";
-          exit_on_retry_failure = true;
-        }];
+        };
       };
 
       detsys.vaultAgent.systemd.services.example = {
@@ -600,20 +586,19 @@ in
       detsys.vaultAgent.systemd.services.example3 = {
         agentConfig = {
           vault = [{ address = "http://127.0.0.1:8200"; }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "1s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         secretFiles.files."rand_bytes".template = ''
@@ -665,20 +650,19 @@ in
     ({ config, pkgs, ... }: {
       detsys.vaultAgent.defaultAgentConfig = {
         vault = [{ address = "http://127.0.0.1:8200"; }];
-        auto_auth = [{
+        auto_auth = {
           method = [{
-            config = [{
+            config = {
               remove_secret_id_file_after_reading = false;
               role_id_file_path = "/role_id";
               secret_id_file_path = "/secret_id";
-            }];
+            };
             type = "approle";
           }];
-        }];
-        template_config = [{
+        };
+        template_config = {
           static_secret_render_interval = "5s";
-          exit_on_retry_failure = true;
-        }];
+        };
       };
 
       detsys.vaultAgent.systemd.services.example = {
@@ -728,20 +712,19 @@ in
             address = "http://127.0.0.1:8200";
             retry.num_retries = 3;
           }];
-          auto_auth = [{
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
-          template_config = [{
+          };
+          template_config = {
             static_secret_render_interval = "5s";
-            exit_on_retry_failure = true;
-          }];
+          };
         };
 
         environment.template = ''

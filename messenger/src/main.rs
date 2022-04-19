@@ -1,13 +1,15 @@
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{self, BufRead, BufReader};
+use std::os::unix::process::ExitStatusExt;
 use std::path::PathBuf;
-use std::process::Command;
 
+use async_std::process::Command;
 use backoff::ExponentialBackoff;
 use clap::{AppSettings, Parser};
+use futures::future::FutureExt;
 use sd_notify::NotifyState;
 use tracing::{error, info, trace};
-use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::filter::{EnvFilter, LevelFilter, Targets};
 use tracing_subscriber::{fmt, prelude::*};
 
 type Result<T, E = Box<dyn std::error::Error>> = core::result::Result<T, E>;
@@ -33,10 +35,12 @@ struct Cli {
     verbosity: usize,
 }
 
-fn main() -> Result<()> {
+#[async_std::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let filter_layer = EnvFilter::builder()
+    let crate_filter = Targets::default().with_target(env!("CARGO_PKG_NAME"), LevelFilter::TRACE);
+    let env_filter = EnvFilter::builder()
         .with_default_directive(
             match cli.verbosity {
                 0 => LevelFilter::WARN,
@@ -50,7 +54,8 @@ fn main() -> Result<()> {
 
     tracing_subscriber::registry()
         .with(fmt::layer())
-        .with(filter_layer)
+        .with(env_filter)
+        .with(crate_filter)
         .try_init()?;
 
     let mut command = Command::new(cli.vault_binary);
@@ -58,6 +63,7 @@ fn main() -> Result<()> {
     command.arg("-config");
     command.arg(cli.agent_config);
 
+    trace!(?command, "spawning vault agent");
     match command.spawn() {
         Ok(mut child) => {
             let files: Vec<PathBuf> = self::get_files_to_monitor(cli.files_to_monitor)?;
@@ -65,20 +71,47 @@ fn main() -> Result<()> {
             // TODO: maybe make the agent run something that will signal the messenger that the files exist, instead of waiting for them:
             // Something to consider is the agent could run something to signal messenger instead of waiting for the files to exist.
             // Then the messenger could restart etc. the target services only if it has finished startup.
-            self::backoff_until_files_exist(files)?;
+            let backoff = self::backoff_until_files_exist(files).fuse();
+            let status = child.status().fuse();
 
-            sd_notify::notify(false, &[NotifyState::Ready])?;
+            futures::pin_mut!(backoff, status);
 
-            let status = child.wait()?;
-            if let Some(errno) = status.code() {
-                sd_notify::notify(false, &[NotifyState::Errno(errno.try_into()?)])?;
-                std::process::exit(errno);
+            loop {
+                futures::select! {
+                    backoff = backoff => {
+                        if let Err(err) = backoff {
+                            error!(%err, "backoff failed");
+                            let _ = child.kill();
+                            std::process::exit(1);
+                        }
+                    },
+                    status = status => {
+                        let status = status?;
+                        let mut status_msg = String::from("vault agent exited");
+
+                        let errno = if let Some(errno) = status.code() {
+                            status_msg.push_str(&format!(" with code {}", errno));
+                            errno
+                        } else if let Some(signal) = status.signal() {
+                            status_msg.push_str(&format!(" with signal {}", signal));
+                            signal
+                        } else {
+                            status_msg.push_str(" with unknown cause (not exit code or signal)");
+                            1
+                        };
+
+                        error!(%status_msg);
+                        sd_notify::notify(false, &[NotifyState::Status(&status_msg)])?;
+                        std::process::exit(errno);
+                    },
+                    complete => break,
+                };
             }
         }
         Err(err) => {
-            error!("failed to spawn vault agent with args: {:?}", command);
-            error!("{:?}", err);
-            sd_notify::notify(false, &[NotifyState::Errno(1)])?;
+            error!(?command, "failed to spawn vault agent");
+            error!(%err);
+            sd_notify::notify(false, &[NotifyState::Status("failed to spawn vault agent")])?;
             std::process::exit(1);
         }
     }
@@ -132,13 +165,13 @@ fn check_if_files_exist(files: &[PathBuf]) -> Vec<PathBuf> {
 }
 
 /// Uses [`backoff::ExponentialBackoff`] to wait for all listed files to exist,
-/// up to a maximum of 15 minutes.
-fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
+/// up to a maximum of 15 minutes. Uses [`sd_notify::notify`] to inform systemd
+/// if the files existed before the backoff hit its maximum.
+async fn backoff_until_files_exist(paths: Vec<PathBuf>) -> async_std::io::Result<()> {
     info!("waiting for all files to exist");
-    let mut not_exists = paths;
 
-    let backoff_waiter = || -> Result<(), backoff::Error<&str>> {
-        not_exists = self::check_if_files_exist(&not_exists);
+    async fn backoff_waiter(not_exists: Vec<PathBuf>) -> Result<(), backoff::Error<&'static str>> {
+        let not_exists = self::check_if_files_exist(&not_exists);
 
         if not_exists.is_empty() {
             info!("all files exist");
@@ -149,7 +182,7 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
                 "still waiting for some files to exist",
             ))
         }
-    };
+    }
 
     let backoff_notify = |err, dur| {
         let _ = err;
@@ -158,8 +191,22 @@ fn backoff_until_files_exist(paths: Vec<PathBuf>) -> Result<()> {
 
     // Backs off to a maximum interval of 1 minute, and a maximum elapsed time of 15 minutes.
     let backoff = ExponentialBackoff::default();
-    backoff::retry_notify(backoff, backoff_waiter, backoff_notify)
-        .map_err(|_| "files did not exist in a timely fashion".into())
+    let ret =
+        backoff::future::retry_notify(backoff, || backoff_waiter(paths.clone()), backoff_notify)
+            .await
+            .map_err(|_| {
+                io::Error::new(
+                    io::ErrorKind::Other,
+                    "files did not exist in a timely fashion",
+                )
+            });
+
+    if ret.is_ok() {
+        trace!("backoff succeeded, notifying systemd we're ready");
+        sd_notify::notify(false, &[NotifyState::Ready])?;
+    }
+
+    ret
 }
 
 #[cfg(test)]
@@ -198,9 +245,8 @@ mod tests {
         ];
 
         let backoff_files = files.clone();
-        let backoff_thread = std::thread::spawn(|| {
-            assert!(super::backoff_until_files_exist(backoff_files).is_ok());
-        });
+        let backoff_handle =
+            async_std::task::spawn(super::backoff_until_files_exist(backoff_files));
 
         // Wait for 50ms so that the backoff functionality has time to see that
         // the files don't exist and wait at least once.
@@ -210,6 +256,6 @@ mod tests {
             std::fs::File::create(file).unwrap();
         }
 
-        assert!(backoff_thread.join().is_ok());
+        assert!(async_std::task::block_on(backoff_handle).is_ok());
     }
 }

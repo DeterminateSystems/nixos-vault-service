@@ -546,7 +546,6 @@ in
       machine.wait_for_file("/secret_id")
       machine.systemctl("start --no-block example")
       machine.succeed("sleep 3")
-      machine.succeed("pkill -f messenger")
       print(machine.fail("systemctl status detsys-vaultAgent-example"))
       if "dead" not in machine.succeed("systemctl show -p SubState --value example"):
           raise Exception("unit shouldn't have even started if the sidecar unit failed")
@@ -719,5 +718,51 @@ in
       print(machine.succeed("cat /etc/rand_bytes-v2-path"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat $(cat /etc/rand_bytes-path)"))
       print(machine.succeed("systemd-run -p JoinsNamespaceOf=detsys-vaultAgent-example.service -p PrivateTmp=true cat $(cat /etc/rand_bytes-v2-path)"))
+    '';
+
+  failAfterRetries = mkTest
+    ({ pkgs, ... }: {
+      detsys.vaultAgent.systemd.services.example = {
+        agentConfig = {
+          vault = [{
+            address = "http://127.0.0.1:8200";
+            retry.num_retries = 3;
+          }];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
+          template_config = [{
+            static_secret_render_interval = "5s";
+            exit_on_retry_failure = true;
+          }];
+        };
+
+        environment.template = ''
+          {{ with secret "sys/tools/randomzzz" "format=base64" }}
+          MY_SECRET={{ .Data.random_bytes }}
+          {{ end }}
+        '';
+        secretFiles.files."example".template = "hello";
+      };
+      systemd.services.example = {
+        script = ''
+          echo My secret is $MY_SECRET
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_file("/secret_id")
+      machine.start_job("example")
+      machine.succeed("sleep 10")
+      print(machine.fail("systemctl status detsys-vaultAgent-example"))
+      print(machine.fail("systemctl status example"))
     '';
 }

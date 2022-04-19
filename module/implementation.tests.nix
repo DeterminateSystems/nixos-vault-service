@@ -53,7 +53,7 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -94,7 +94,7 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -150,7 +150,7 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -210,7 +210,7 @@ in
 
       detsys.vaultAgent.systemd.services.nginx = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -258,7 +258,7 @@ in
 
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -300,7 +300,7 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               type = "approle";
@@ -372,7 +372,7 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -431,9 +431,9 @@ in
 
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{
+          vault = {
             address = "http://127.0.0.1:8200";
-          }];
+          };
           auto_auth = {
             method = [{
               type = "approle";
@@ -497,10 +497,10 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{
+          vault = {
             address = "http://127.0.0.1:8200";
             retry.num_retries = 1;
-          }];
+          };
           auto_auth = {
             method = [{
               config = {
@@ -541,7 +541,7 @@ in
   defaultConfig = mkTest
     ({ pkgs, ... }: {
       detsys.vaultAgent.defaultAgentConfig = {
-        vault = [{ address = "http://127.0.0.1:8200"; }];
+        vault = { address = "http://127.0.0.1:8200"; };
         auto_auth = {
           method = [{
             config = {
@@ -585,7 +585,7 @@ in
 
       detsys.vaultAgent.systemd.services.example3 = {
         agentConfig = {
-          vault = [{ address = "http://127.0.0.1:8200"; }];
+          vault = { address = "http://127.0.0.1:8200"; };
           auto_auth = {
             method = [{
               config = {
@@ -649,7 +649,7 @@ in
   pathToSecret = mkTest
     ({ config, pkgs, ... }: {
       detsys.vaultAgent.defaultAgentConfig = {
-        vault = [{ address = "http://127.0.0.1:8200"; }];
+        vault = { address = "http://127.0.0.1:8200"; };
         auto_auth = {
           method = [{
             config = {
@@ -708,10 +708,10 @@ in
     ({ pkgs, ... }: {
       detsys.vaultAgent.systemd.services.example = {
         agentConfig = {
-          vault = [{
+          vault = {
             address = "http://127.0.0.1:8200";
             retry.num_retries = 3;
-          }];
+          };
           auto_auth = {
             method = [{
               config = {

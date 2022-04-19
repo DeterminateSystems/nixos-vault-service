@@ -56,7 +56,7 @@ with
     { }
     { }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [ ];
     };
@@ -71,7 +71,7 @@ with
       '';
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -93,7 +93,7 @@ with
       environment.templateFiles."example-a".file = ./helpers.tests.nix;
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -114,7 +114,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -135,7 +135,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -155,7 +155,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -182,7 +182,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -206,7 +206,7 @@ with
       secretFiles.files."example".template = "FOO=BAR";
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -224,7 +224,7 @@ with
       secretFiles.files."example".templateFile = ./helpers.tests.nix;
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -245,7 +245,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -271,7 +271,7 @@ with
       };
     }
     {
-      auto_auth = [ ];
+      auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -293,17 +293,17 @@ with
     { }
     {
       agentConfig = {
-        vault = [{ address = "http://127.0.0.1:8200"; }];
-        auto_auth = [{
+        vault = { address = "http://127.0.0.1:8200"; };
+        auto_auth = {
           method = [{
-            config = [{
+            config = {
               remove_secret_id_file_after_reading = false;
               role_id_file_path = "role_id";
               secret_id_file_path = "secret_id";
-            }];
+            };
             type = "approle";
           }];
-        }];
+        };
       };
       secretFiles = {
         defaultChangeAction = "reload";
@@ -316,17 +316,17 @@ with
       };
     }
     {
-      vault = [{ address = "http://127.0.0.1:8200"; }];
-      auto_auth = [{
+      vault = { address = "http://127.0.0.1:8200"; };
+      auto_auth = {
         method = [{
-          config = [{
+          config = {
             remove_secret_id_file_after_reading = false;
             role_id_file_path = "role_id";
             secret_id_file_path = "secret_id";
-          }];
+          };
           type = "approle";
         }];
-      }];
+      };
       template_config.exit_on_retry_failure = true;
       template = [
         {
@@ -346,17 +346,17 @@ with
 
   defaultAgentConfig = expectRenderedConfig
     {
-      vault = [{ address = "http://127.0.0.1:8200"; }];
-      auto_auth = [{
+      vault = { address = "http://127.0.0.1:8200"; };
+      auto_auth = {
         method = [{
-          config = [{
+          config = {
             remove_secret_id_file_after_reading = false;
             role_id_file_path = "role_id";
             secret_id_file_path = "secret_id";
-          }];
+          };
           type = "approle";
         }];
-      }];
+      };
     }
     {
       secretFiles = {
@@ -370,17 +370,17 @@ with
       };
     }
     {
-      vault = [{ address = "http://127.0.0.1:8200"; }];
-      auto_auth = [{
+      vault = { address = "http://127.0.0.1:8200"; };
+      auto_auth = {
         method = [{
-          config = [{
+          config = {
             remove_secret_id_file_after_reading = false;
             role_id_file_path = "role_id";
             secret_id_file_path = "secret_id";
-          }];
+          };
           type = "approle";
         }];
-      }];
+      };
       template_config.exit_on_retry_failure = true;
       template = [
         {

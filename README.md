@@ -141,17 +141,17 @@ You can set the default `agentConfig` for all units by using the `detsys.vaultAg
 ```nix
 {
   detsys.vaultAgent.defaultAgentConfig = {
-    vault = [{ address = "http://127.0.0.1:8200"; }];
-    auto_auth = [{
+    vault = { address = "http://127.0.0.1:8200"; };
+    auto_auth = {
       method = [{
-        config = [{
+        type = "approle";
+        config = {
           remove_secret_id_file_after_reading = false;
           role_id_file_path = "/role_id";
           secret_id_file_path = "/secret_id";
-        }];
-        type = "approle";
+        };
       }];
-    }];
+    };
     template_config = {
       static_secret_render_interval = "5s";
     };

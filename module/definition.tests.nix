@@ -196,20 +196,20 @@ suite {
     systemd.services.global-config = { };
     detsys.vaultAgent.systemd.services.global-config = { };
     detsys.vaultAgent.defaultAgentConfig = {
-      vault = [{
+      vault = {
         address = "http://127.0.0.1:8200";
         retry.num_retries = 1;
-      }];
-      auto_auth = [{
+      };
+      auto_auth = {
         method = [{
-          config = [{
+          config = {
             remove_secret_id_file_after_reading = false;
             role_id_file_path = "/role_id";
             secret_id_file_path = "/secret_id";
-          }];
+          };
           type = "approle";
         }];
-      }];
+      };
       template_config = {
         static_secret_render_interval = "5s";
         exit_on_retry_failure = true;
@@ -237,20 +237,20 @@ suite {
         systemd.services.global-config = { };
         detsys.vaultAgent.systemd.services.global-config = { };
         detsys.vaultAgent.defaultAgentConfig = {
-          vault = [{
+          vault = {
             address = "http://127.0.0.1:8200";
             retry.num_retries = 1;
-          }];
-          auto_auth = [{
+          };
+          auto_auth = {
             method = [{
-              config = [{
+              config = {
                 remove_secret_id_file_after_reading = false;
                 role_id_file_path = "/role_id";
                 secret_id_file_path = "/secret_id";
-              }];
+              };
               type = "approle";
             }];
-          }];
+          };
           template_config = {
             static_secret_render_interval = "5s";
             exit_on_retry_failure = false;

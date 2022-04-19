@@ -216,4 +216,63 @@ suite {
       };
     };
   };
+
+  globalConfigErr =
+    expectAssertsWarns
+      {
+        assertions = [
+          ''
+            detsys.vaultAgent.systemd.services.global-config:
+                The agent config does not specify template_config.exit_on_retry_failure or has
+                it set to false. This is not supported.
+          ''
+          ''
+            detsys.vaultAgent.defaultAgentConfig:
+                The default agent config does not specify template_config.exit_on_retry_failure
+                or has it set to false. This is not supported.
+          ''
+        ];
+      }
+      {
+        systemd.services.global-config = { };
+        detsys.vaultAgent.systemd.services.global-config = { };
+        detsys.vaultAgent.defaultAgentConfig = {
+          vault = [{
+            address = "http://127.0.0.1:8200";
+            retry.num_retries = 1;
+          }];
+          auto_auth = [{
+            method = [{
+              config = [{
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              }];
+              type = "approle";
+            }];
+          }];
+          template_config = {
+            static_secret_render_interval = "5s";
+            exit_on_retry_failure = false;
+          };
+        };
+      };
+
+  noExitOnRetry =
+    expectAssertsWarns
+      {
+        assertions = [
+          ''
+            detsys.vaultAgent.systemd.services.test:
+                The agent config does not specify template_config.exit_on_retry_failure or has
+                it set to false. This is not supported.
+          ''
+        ];
+      }
+      {
+        systemd.services.test = { };
+        detsys.vaultAgent.systemd.services.test.agentConfig = {
+          template_config.exit_on_retry_failure = false;
+        };
+      };
 }

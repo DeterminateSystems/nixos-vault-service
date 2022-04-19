@@ -63,7 +63,7 @@ async fn main() -> Result<()> {
     command.arg("-config");
     command.arg(cli.agent_config);
 
-    trace!("spawning vault agent with args: {:?}", command);
+    trace!(?command, "spawning vault agent");
     match command.spawn() {
         Ok(mut child) => {
             let files: Vec<PathBuf> = self::get_files_to_monitor(cli.files_to_monitor)?;
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
                 futures::select! {
                     backoff = backoff => {
                         if let Err(err) = backoff {
-                            error!("backoff failed: {}", err);
+                            error!(%err, "backoff failed");
                             let _ = child.kill();
                             std::process::exit(1);
                         }
@@ -100,7 +100,7 @@ async fn main() -> Result<()> {
                             1
                         };
 
-                        error!("{}", status_msg);
+                        error!(%status_msg);
                         sd_notify::notify(false, &[NotifyState::Status(&status_msg)])?;
                         std::process::exit(errno);
                     },
@@ -109,8 +109,8 @@ async fn main() -> Result<()> {
             }
         }
         Err(err) => {
-            error!("failed to spawn vault agent with args: {:?}", command);
-            error!("{}", err);
+            error!(?command, "failed to spawn vault agent");
+            error!(%err);
             sd_notify::notify(false, &[NotifyState::Status("failed to spawn vault agent")])?;
             std::process::exit(1);
         }

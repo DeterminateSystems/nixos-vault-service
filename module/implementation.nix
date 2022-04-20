@@ -34,7 +34,7 @@ let
       requires = [ "network.target" ];
       after = [ "network.target" ];
 
-      wantedBy = [ fullServiceName ];
+      wants = [ fullServiceName ];
       before = [ fullServiceName ];
 
       # Needs getent in PATH

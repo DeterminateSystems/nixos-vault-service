@@ -57,9 +57,9 @@ being integrating your services with Vault.
 
 ### Options
 
-* `detsys.vaultAgent.defaultAgentConfig` (optional, default: `{ }`) &ndash; The default configuration for all Vault agents. Defers to individual service's `agentConfig`, if set.
+* `detsys.vaultAgent.defaultAgentConfig` (optional, default: `{ }`) &ndash; The default configuration for all Vault agents. Defers to individual service's `agentConfig`, if set. See [`agentConfig` options](#agentconfig-options) for more information.
 * `detsys.vaultAgent.systemd.services.<service-name>.enable` (optional, default: `false`) &ndash; Whether to enable Vault integration with the service specified by `<service-name>`.
-* `detsys.vaultAgent.systemd.services.<service-name>.agentConfig` (optional, default: `null`) &ndash; The Vault agent configuration for this service.
+* `detsys.vaultAgent.systemd.services.<service-name>.agentConfig` (optional, default: `{ }`) &ndash; The Vault agent configuration for this service. See [`agentConfig` options](#agentconfig-options) for more information.
 * `detsys.vaultAgent.systemd.services.<service-name>.environment` (optional, default: `{ }`) &ndash; Environment variable secret configuration.
   * `detsys.vaultAgent.systemd.services.<service-name>.environment.changeAction` (optional, default: `"restart"`) &ndash; What action to take if any secrets in the environment change. One of `"restart"`, `"stop"`, or `"none"`.
   * `detsys.vaultAgent.systemd.services.<service-name>.environment.templateFiles` (optional, default: `{ }`) &ndash; Set of files containing environment variables for Vault to template.
@@ -73,6 +73,23 @@ being integrating your services with Vault.
     * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.template` (optional, default: `null`) &ndash; A string containing a Vault template. Conflicts with `templateFile`.
     * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.perms` (optional, default: `"0400"`) &ndash; The octal mode of the secret file.
     * `detsys.vaultAgent.systemd.services.<service-name>.secretFiles.files.<filename>.path` (read-only) &ndash; The path to the secret file inside `<service-name>`'s namespace's `PrivateTmp`.
+
+#### `agentConfig` options
+
+The `agentConfig` options are partially typed in order to allow us to set defaults, as well as prevent users from using obviously broken configurations.
+
+These options apply for both `detsys.vaultAgent.defaultAgentConfig` and `detsys.vaultAgent.systemd.services.<service-name>.agentConfig`.
+
+* `agentConfig.auto_auth` (optional, default: `{ }`) &ndash; The Vault agent's `auto_auth` configuration.
+* `agentConfig.auto_auth.method` (optional, default: `[ ]`) &ndash; The `auto_auth`'s `method` configuration. Note that this does not support the HCL-esque way of defining this option with `method "aws" { ... }` -- you must specify the `type` and `config` separately.
+* `agentConfig.auto_auth.method.[].type` (required) &ndash; The `auto_auth.method`'s type.
+* `agentConfig.auto_auth.method.[].config` (required) &ndash; The `auto_auth.method`'s configuration.
+* `agentConfig.template_config` (optional, default: `{ }`) &ndash; The Vault agent's `template_config` configuration.
+* `agentConfig.template_config.exit_on_retry_failure` (optional, default: `true`) &ndash; Whether or not to exit the Vault agent when it fails to retry any further. Must be true.
+
+Any options not listed here may be manually specified, but will not be type-checked.
+
+For example, to specify the `cache.use_auto_auth_token` option, you would only need to specify `agentConfig.cache.use_auto_auth_token = true;`.
 
 ### Examples
 

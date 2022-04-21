@@ -795,4 +795,91 @@ in
       print(machine.succeed("systemctl status example"))
       print(machine.succeed("systemctl status detsys-vaultAgent-example"))
     '';
+
+  unitsStopEachOther = mkTest
+    ({ pkgs, ... }: {
+      detsys.vaultAgent.defaultAgentConfig = {
+        vault = { address = "http://127.0.0.1:8200"; };
+        auto_auth = {
+          method = [{
+            config = {
+              remove_secret_id_file_after_reading = false;
+              role_id_file_path = "/role_id";
+              secret_id_file_path = "/secret_id";
+            };
+            type = "approle";
+          }];
+        };
+        template_config = {
+          static_secret_render_interval = "5s";
+        };
+      };
+
+      detsys.vaultAgent.systemd.services.example = {
+        secretFiles.files."rand_bytes".template = ''
+          {{ with secret "sys/tools/random/3" "format=base64" }}
+          Have THREE random bytes from a templated string! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+
+      detsys.vaultAgent.systemd.services.example2 = {
+        secretFiles.files."rand_bytes-v2".template = ''
+          {{ with secret "sys/tools/random/6" "format=base64" }}
+          Have SIX random bytes from a template string! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+
+      detsys.vaultAgent.systemd.services.example3 = {
+        secretFiles.files."rand_bytes-v3".template = ''
+          {{ with secret "sys/tools/random/9" "format=base64" }}
+          Have NINE random bytes from a template string! {{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+
+      systemd.services.example = {
+        script = ''
+          cat /tmp/detsys-vault/rand_bytes
+        '';
+      };
+
+      systemd.services.example2 = {
+        script = ''
+          cat /tmp/detsys-vault/rand_bytes-v2
+          exit 1
+        '';
+      };
+
+      systemd.services.example3 = {
+        script = ''
+          cat /tmp/detsys-vault/rand_bytes-v3
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_file("/secret_id")
+      machine.start_job("example")
+      machine.start_job("example2")
+      machine.start_job("example3")
+      machine.succeed("sleep 1")
+
+      if "dead" not in machine.succeed("systemctl show -p SubState --value example"):
+          raise Exception("full unit should have exited successfully")
+      if "dead" not in machine.succeed("systemctl show -p SubState --value detsys-vaultAgent-example"):
+          raise Exception("sidecar unit should also have exited successfully")
+
+      if "failed" not in machine.succeed("systemctl show -p SubState --value example2"):
+          raise Exception("full unit should have failed")
+      if "dead" not in machine.succeed("systemctl show -p SubState --value detsys-vaultAgent-example2"):
+          raise Exception("sidecar unit should have exited successfully because the full unit failed")
+
+      machine.stop_job("detsys-vaultAgent-example3")
+      if "dead" not in machine.succeed("systemctl show -p SubState --value detsys-vaultAgent-example3"):
+          raise Exception("sidecar unit should have exited because it was stopped")
+      if "dead" not in machine.succeed("systemctl show -p SubState --value example3"):
+          raise Exception("full unit should have exited successfully because the sidecar was stopped")
+    '';
 }

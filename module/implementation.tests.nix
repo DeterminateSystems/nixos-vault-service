@@ -4,7 +4,7 @@ let
   mkTest = config: testScript:
     testTools.simpleTest {
       inherit testScript;
-      machine = { pkgs, ... }: {
+      nodes.machine = { pkgs, ... }: {
         imports = [
           self.nixosModule
           config

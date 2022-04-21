@@ -43,6 +43,7 @@ let
       unitConfig = {
         StartLimitIntervalSec = lib.mkDefault 30;
         StartLimitBurst = lib.mkDefault 6;
+        StopPropagatedFrom = [ fullServiceName ];
       };
 
       serviceConfig = {

@@ -748,4 +748,51 @@ in
       print(machine.fail("systemctl status detsys-vaultAgent-example"))
       print(machine.fail("systemctl status example"))
     '';
+
+  failOnStartup = mkTest
+    ({ pkgs, ... }: {
+      detsys.vaultAgent.systemd.services.example = {
+        agentConfig = {
+          vault = {
+            address = "http://127.0.0.1:8200";
+            retry.num_retries = 3;
+          };
+          auto_auth = {
+            method = [{
+              config = {
+                remove_secret_id_file_after_reading = false;
+                role_id_file_path = "/role_id";
+                secret_id_file_path = "/secret_id";
+              };
+              type = "approle";
+            }];
+          };
+          template_config = {
+            static_secret_render_interval = "5s";
+          };
+        };
+
+        environment.template = ''
+          {{ with secret "sys/tools/random/1" "format=base64" }}
+          MY_SECRET={{ .Data.random_bytes }}
+          {{ end }}
+        '';
+      };
+      systemd.services.example = {
+        script = ''
+          echo My secret is $MY_SECRET
+          sleep infinity
+        '';
+      };
+    })
+    ''
+      machine.wait_for_file("/secret_id")
+      machine.systemctl("start --no-block example")
+      machine.succeed("while ! pkill -f messenger; do sleep 0.1; done")
+      print(machine.fail("systemctl status example"))
+      print(machine.fail("systemctl status detsys-vaultAgent-example"))
+      machine.succeed("sleep 10")
+      print(machine.succeed("systemctl status example"))
+      print(machine.succeed("systemctl status detsys-vaultAgent-example"))
+    '';
 }

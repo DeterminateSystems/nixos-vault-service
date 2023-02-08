@@ -14,8 +14,6 @@ jobs:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Terraform fmt
         run: nix-shell --run 'terraform fmt -check -recursive ./terraform'
       - name: Terraform init
@@ -42,8 +40,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check nixpkgs-fmt formatting
         run: .github/workflows/fmt.sh
 
@@ -55,8 +51,6 @@ jobs:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Shellcheck ./scripts/
         run: nix-shell --run 'shellcheck $(git ls-files | grep "\.sh$")'
 
@@ -68,8 +62,6 @@ jobs:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Evaluation cases of the definition
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
       - name: Evaluation cases of the helpers
@@ -90,8 +82,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check rustfmt
         working-directory: ./messenger
         run: nix develop --command cargo fmt -- --check
@@ -101,7 +91,5 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Build messenger
         run: nix build .#messenger -L

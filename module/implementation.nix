@@ -38,7 +38,7 @@ let
       before = [ fullServiceName ];
 
       # Needs getent in PATH
-      path = [ pkgs.glibc ];
+      path = [ pkgs.glibc pkgs.getent ];
 
       unitConfig = {
         StartLimitIntervalSec = lib.mkDefault 30;

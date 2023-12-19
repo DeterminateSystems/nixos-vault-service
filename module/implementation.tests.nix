@@ -791,10 +791,10 @@ let
       ''
         machine.wait_for_file("/secret_id")
         machine.systemctl("start --no-block example")
-        machine.succeed("while ! pkill -f messenger; do sleep 0.1; done")
+        machine.execute("while ! pkill -f messenger; do sleep 0.1; done")
         print(machine.fail("systemctl status example"))
         print(machine.fail("systemctl status detsys-vaultAgent-example"))
-        machine.succeed("sleep 10")
+        machine.succeed("sleep 3")
         print(machine.succeed("systemctl status example"))
         print(machine.succeed("systemctl status detsys-vaultAgent-example"))
       '')

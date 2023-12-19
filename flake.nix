@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    flake-compat.url = "https://flakehub.com/f/edolstra/flake-compat/1.0.1.tar.gz";
   };
 
   outputs =
@@ -15,9 +16,9 @@
       genAttrs = names: f: builtins.listToAttrs (map (n: nameValuePair n (f n)) names);
 
       pkgsFor = pkgs: system:
-        import pkgs { inherit system; };
+        import pkgs { inherit system; config.allowUnfree = true; };
 
-      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" ];
+      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: genAttrs allSystems
         (system: f {
           inherit system;
@@ -63,7 +64,10 @@
               jq
               vault
               nixpkgs-fmt
-            ];
+              cargo
+            ] ++ lib.optionals (pkgs.stdenv.isDarwin) (with pkgs; [
+              libiconv
+            ]);
           }
         );
 

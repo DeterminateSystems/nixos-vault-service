@@ -37,8 +37,8 @@ let
       wants = [ fullServiceName ];
       before = [ fullServiceName ];
 
-      # Needs getent in PATH
-      path = [ pkgs.glibc pkgs.getent ];
+      # Vault needs getent in PATH
+      path = [ pkgs.getent ];
 
       unitConfig = {
         StartLimitIntervalSec = lib.mkDefault 30;

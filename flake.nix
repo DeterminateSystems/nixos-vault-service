@@ -63,7 +63,10 @@
               jq
               vault
               nixpkgs-fmt
-            ];
+              cargo
+            ] ++ lib.optionals (pkgs.stdenv.isDarwin) (with pkgs; [
+              libiconv
+            ]);
           }
         );
 

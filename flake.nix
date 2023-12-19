@@ -22,6 +22,7 @@
         (system: f {
           inherit system;
           pkgs = pkgsFor nixpkgs system;
+          config.allowUnfree = true;
         });
 
       inherit (nixpkgs) lib;

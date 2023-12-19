@@ -15,14 +15,13 @@
       genAttrs = names: f: builtins.listToAttrs (map (n: nameValuePair n (f n)) names);
 
       pkgsFor = pkgs: system:
-        import pkgs { inherit system; };
+        import pkgs { inherit system; config.allowUnfree = true; };
 
       allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: genAttrs allSystems
         (system: f {
           inherit system;
           pkgs = pkgsFor nixpkgs system;
-          config.allowUnfree = true;
         });
 
       inherit (nixpkgs) lib;

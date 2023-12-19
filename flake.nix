@@ -17,7 +17,7 @@
       pkgsFor = pkgs: system:
         import pkgs { inherit system; };
 
-      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" ];
+      allSystems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
       forAllSystems = f: genAttrs allSystems
         (system: f {
           inherit system;

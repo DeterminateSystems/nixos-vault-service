@@ -90,7 +90,7 @@ with
   environmentOneFile = expectRenderedConfig
     { }
     {
-      environment.templateFiles."example-a".file = ./helpers.tests.nix;
+      environment.templateFiles."example'-a".file = ./helpers.tests.nix;
     }
     {
       auto_auth.method = [ ];
@@ -98,7 +98,7 @@ with
       template = [
         {
           command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example/example\'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }

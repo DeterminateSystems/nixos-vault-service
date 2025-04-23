@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use async_std::process::Command;
 use backoff::ExponentialBackoff;
-use clap::{AppSettings, Parser};
+use clap::Parser;
 use futures::future::FutureExt;
 use sd_notify::NotifyState;
 use tracing::{error, info, trace};
@@ -16,7 +16,6 @@ type Result<T, E = Box<dyn std::error::Error>> = core::result::Result<T, E>;
 
 /// MESSENGER
 #[derive(Parser)]
-#[clap(global_setting(AppSettings::DeriveDisplayOrder))]
 struct Cli {
     /// The path to the vault binary that will run an agent.
     #[clap(long)]
@@ -31,8 +30,8 @@ struct Cli {
     files_to_monitor: PathBuf,
 
     /// The verbosity level of the logging.
-    #[clap(long, short, parse(from_occurrences))]
-    verbosity: usize,
+    #[clap(long, short, action = clap::ArgAction::Count)]
+    verbosity: u8,
 }
 
 #[async_std::main]

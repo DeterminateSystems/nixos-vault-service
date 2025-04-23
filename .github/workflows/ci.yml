@@ -27,31 +27,28 @@ jobs:
 
       - name: Check nixpkgs-fmt formatting
         if: success() || failure()
-        run: find . -path '*.nix' -print0 | xargs -0 nixpkgs-fmt --check
+        run: |
+          find . -path '*.nix' -print0 | xargs -0 nix develop -c nixpkgs-fmt --check
 
       - name: Terraform fmt
         if: success() || failure()
-        run: nix-shell --run 'terraform fmt -check -recursive ./terraform'
+        run: nix develop -c terraform fmt -check -recursive ./terraform
       - name: Terraform init
         run: |
-          nix-shell --run '
-            for dir in $(find terraform -type d); do
-              echo "initializing dir $dir"
-              terraform -chdir=$dir init -backend=false
-            done
-          '
+          for dir in $(find terraform -type d); do
+            echo "initializing dir $dir"
+            nix develop -c terraform -chdir=$dir init -backend=false
+          done
       - name: Terraform validate
         if: success() || failure()
         run: |
-          nix-shell --run '
-            for dir in $(find terraform -type d); do
-              echo "validating dir $dir"
-              terraform -chdir=$dir validate -no-color
-            done
-          '
+          for dir in $(find terraform -type d); do
+            echo "validating dir $dir"
+            nix develop -c terraform -chdir=$dir validate -no-color
+          done
       - name: Shellcheck
         if: success() || failure()
-        run: nix develop -c sh -c 'shellcheck $(git ls-files | grep "\.sh$")'
+        run: nix develop -c shellcheck $(git ls-files | grep "\.sh$")
 
       - name: Check rustfmt
         if: success() || failure()

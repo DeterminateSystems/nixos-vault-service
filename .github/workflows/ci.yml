@@ -6,99 +6,59 @@ on:
     branches: [main]
 
 jobs:
-  Terraform:
+  CI:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          determinate: true
+      - name: Enable FlakeHub cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
+      - uses: greut/eclint-action@v0
+        if: success() || failure()
+
+      - name: Check nixpkgs-fmt formatting
+        if: success() || failure()
+        run: |
+          find . -path '*.nix' -print0 | xargs -0 nix develop -c nixpkgs-fmt --check
+
       - name: Terraform fmt
-        run: nix-shell --run 'terraform fmt -check -recursive ./terraform'
+        if: success() || failure()
+        run: nix develop -c terraform fmt -check -recursive ./terraform
       - name: Terraform init
         run: |
-          nix-shell --run '
-            for dir in $(find terraform -type d); do
-              echo "initializing dir $dir"
-              terraform -chdir=$dir init -backend=false
-            done
-          '
+          for dir in $(find terraform -type d); do
+            echo "initializing dir $dir"
+            nix develop -c terraform -chdir=$dir init -backend=false
+          done
       - name: Terraform validate
+        if: success() || failure()
         run: |
-          nix-shell --run '
-            for dir in $(find terraform -type d); do
-              echo "validating dir $dir"
-              terraform -chdir=$dir validate -no-color
-            done
-          '
+          for dir in $(find terraform -type d); do
+            echo "validating dir $dir"
+            nix develop -c terraform -chdir=$dir validate -no-color
+          done
+      - name: Shellcheck
+        if: success() || failure()
+        run: nix develop -c shellcheck $(git ls-files | grep "\.sh$")
 
-  NixFormat:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Check nixpkgs-fmt formatting
-        run: .github/workflows/fmt.sh
-
-  Shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Shellcheck ./scripts/
-        run: nix-shell --run 'shellcheck $(git ls-files | grep "\.sh$")'
-
-  NixTests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Evaluation cases of the definition
-        run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
-      - name: Evaluation cases of the helpers
-        run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers
-      # NOTE: we can't add the implementation tests to CI because of the lack of KVM:
-      #   error: a 'x86_64-linux' with features {kvm, nixos-test} is required to build '/nix/store/5cy5k2lgcfc9apjf3icj74l53bxxf8b0-vm-test-run-unnamed.drv', but I am a 'x86_64-linux' with features {benchmark, big-parallel, nixos-test}
-
-  EditorConfig:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: greut/eclint-action@v0
-
-  RustFmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Check rustfmt
+        if: success() || failure()
         working-directory: ./messenger
         run: nix develop --command cargo fmt -- --check
 
-  RustBuild:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Build messenger
+        if: success() || failure()
         run: nix build .#messenger -L
+
+      - name: General nix flake check
+        if: success() || failure()
+        run: nix flake check --keep-going -L

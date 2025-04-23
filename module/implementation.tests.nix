@@ -1,6 +1,6 @@
-{ nixpkgs, self, lib, ... }:
+{ nixpkgs, system, self, lib, ... }:
 let
-  testTools = import (nixpkgs + "/nixos/lib/testing-python.nix") { system = "x86_64-linux"; };
+  testTools = import (nixpkgs + "/nixos/lib/testing-python.nix") { inherit system; };
   mkTest = name: config: testScript:
     testTools.simpleTest {
       inherit name testScript;

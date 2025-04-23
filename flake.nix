@@ -60,11 +60,12 @@
                   tf.local
                   tf.vault
                 ]))
+                cargo
                 foreman
                 jq
-                vault
                 nixpkgs-fmt
-                cargo
+                shellcheck
+                vault
               ] ++ lib.optionals (pkgs.stdenv.isDarwin) (with pkgs; [
                 libiconv
               ]);

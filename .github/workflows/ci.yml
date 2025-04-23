@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 jobs:
-  Terraform:
+  CI:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -21,7 +21,16 @@ jobs:
           determinate: true
       - name: Enable magic Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - uses: greut/eclint-action@v0
+        if: success() || failure()
+
+      - name: Check nixpkgs-fmt formatting
+        if: success() || failure()
+        run: find . -path '*.nix' -print0 | xargs -0 nixpkgs-fmt --check
+
       - name: Terraform fmt
+        if: success() || failure()
         run: nix-shell --run 'terraform fmt -check -recursive ./terraform'
       - name: Terraform init
         run: |
@@ -32,6 +41,7 @@ jobs:
             done
           '
       - name: Terraform validate
+        if: success() || failure()
         run: |
           nix-shell --run '
             for dir in $(find terraform -type d); do
@@ -39,95 +49,19 @@ jobs:
               terraform -chdir=$dir validate -no-color
             done
           '
+      - name: Shellcheck
+        if: success() || failure()
+        run: nix develop -c sh -c 'shellcheck $(git ls-files | grep "\.sh$")'
 
-  NixFormat:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-      - uses: DeterminateSystems/flakehub-cache-action@main
-      - name: Check nixpkgs-fmt formatting
-        run: .github/workflows/fmt.sh
-
-  Shellcheck:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Shellcheck ./scripts/
-        run: nix-shell --run 'shellcheck $(git ls-files | grep "\.sh$")'
-
-  NixTests:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-      - name: Enable magic Nix cache
-        uses: DeterminateSystems/flakehub-cache-action@main
-      - name: General nix flake check
-        run: nix flake check --keep-going -L
-
-  EditorConfig:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: greut/eclint-action@v0
-
-  RustFmt:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-      - uses: DeterminateSystems/flakehub-cache-action@main
       - name: Check rustfmt
+        if: success() || failure()
         working-directory: ./messenger
         run: nix develop --command cargo fmt -- --check
 
-  RustBuild:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-        with:
-          determinate: true
-      - uses: DeterminateSystems/flakehub-cache-action@main
       - name: Build messenger
+        if: success() || failure()
         run: nix build .#messenger -L
+
+      - name: General nix flake check
+        if: success() || failure()
+        run: nix flake check --keep-going -L

@@ -29,15 +29,15 @@ with
     expectRenderedConfig = globalCfg: cfg: expect:
       let
         evaluatedCfg = evalCfg {
-          systemd.services.example = { };
+          systemd.services.example' = { };
           detsys.vaultAgent.defaultAgentConfig = globalCfg;
-          detsys.vaultAgent.systemd.services.example = cfg;
+          detsys.vaultAgent.systemd.services.example' = cfg;
         };
         result = safeEval evaluatedCfg;
 
         filteredAsserts = builtins.map (asrt: asrt.message) (lib.filter (asrt: !asrt.assertion) result.value.assertions);
 
-        actual = (helpers.renderAgentConfig "example" { } result.value.detsys.vaultAgent.systemd.services.example).agentConfig;
+        actual = (helpers.renderAgentConfig "example'" { } result.value.detsys.vaultAgent.systemd.services.example').agentConfig;
       in
       if !result.success
       then
@@ -47,7 +47,7 @@ with
         throw "Unexpected assertions or warnings. Assertions: ${builtins.toJSON filteredAsserts}. Warnings: ${builtins.toJSON result.value.warnings}"
       else if actual != expect
       then
-        throw "Mismatched configuration.\nExpected: ${builtins.toJSON expect}\nGot: ${builtins.toJSON actual}"
+        throw "Mismatched configuration.\nExp: ${builtins.toJSON expect}\nGot: ${builtins.toJSON actual}"
       else "ok";
   }
 );
@@ -75,8 +75,8 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/EnvFile";
           contents = ''
             {{ with secret "postgresql/creds/hydra" }}
             HYDRA_DBI=dbi:Pg:dbname=hydra;host=the-database-server;username={{ .Data.username }};password={{ .Data.password }};
@@ -97,8 +97,8 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example\'-a.EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/example\'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -110,7 +110,7 @@ with
     {
       environment = {
         changeAction = "stop";
-        templateFiles."example-a".file = ./helpers.tests.nix;
+        templateFiles."example'-a".file = ./helpers.tests.nix;
       };
     }
     {
@@ -118,8 +118,8 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "systemctl stop 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
+          command = "systemctl stop 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/example'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -131,7 +131,7 @@ with
     {
       environment = {
         changeAction = "none";
-        templateFiles."example-a".file = ./helpers.tests.nix;
+        templateFiles."example'-a".file = ./helpers.tests.nix;
       };
     }
     {
@@ -139,7 +139,7 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
+          destination = "${helpers.environmentFilesRoot}example'/example'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -150,8 +150,8 @@ with
     { }
     {
       environment.templateFiles = {
-        "example-a".file = ./helpers.tests.nix;
-        "example-b".file = ./helpers.tests.nix;
+        "example\'-a".file = ./helpers.tests.nix;
+        "example'-b".file = ./helpers.tests.nix;
       };
     }
     {
@@ -159,14 +159,14 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/example\'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example-b.EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/example'-b.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -178,7 +178,7 @@ with
     {
       environment = {
         template = "FOO=BAR";
-        templateFiles."example-a".file = ./helpers.tests.nix;
+        templateFiles."example\'-a".file = ./helpers.tests.nix;
       };
     }
     {
@@ -186,14 +186,14 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/EnvFile";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "systemctl try-restart 'example.service'";
-          destination = "${helpers.environmentFilesRoot}example/example-a.EnvFile";
+          command = "systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.environmentFilesRoot}example'/example\'-a.EnvFile";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -203,15 +203,15 @@ with
   secretFileInline = expectRenderedConfig
     { }
     {
-      secretFiles.files."example".template = "FOO=BAR";
+      secretFiles.files."example'".template = "FOO=BAR";
     }
     {
       auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''';systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'";
           contents = "FOO=BAR";
           perms = "0400";
         }
@@ -221,15 +221,15 @@ with
   secretFileTemplate = expectRenderedConfig
     { }
     {
-      secretFiles.files."example".templateFile = ./helpers.tests.nix;
+      secretFiles.files."example'".templateFile = ./helpers.tests.nix;
     }
     {
       auto_auth.method = [ ];
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''';systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'";
           source = ./helpers.tests.nix;
           perms = "0400";
         }
@@ -241,7 +241,7 @@ with
     {
       secretFiles = {
         defaultChangeAction = "reload";
-        files."example".template = "FOO=BAR";
+        files."example'".template = "FOO=BAR";
       };
     }
     {
@@ -249,8 +249,8 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example';systemctl try-reload-or-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''';systemctl try-reload-or-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example'";
           contents = "FOO=BAR";
           perms = "0400";
         }
@@ -262,8 +262,8 @@ with
     {
       secretFiles = {
         defaultChangeAction = "reload";
-        files."example-a".template = "FOO=BAR";
-        files."example-b" = {
+        files."example\'-a".template = "FOO=BAR";
+        files."example'-b" = {
           changeAction = "restart";
           template = "FOO=BAR";
           perms = "0600";
@@ -275,14 +275,14 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-a";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-a';systemctl try-reload-or-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-b";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-b';systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'-b";
           contents = "FOO=BAR";
           perms = "0600";
         }
@@ -307,8 +307,8 @@ with
       };
       secretFiles = {
         defaultChangeAction = "reload";
-        files."example-a".template = "FOO=BAR";
-        files."example-b" = {
+        files."example\'-a".template = "FOO=BAR";
+        files."example'-b" = {
           changeAction = "restart";
           template = "FOO=BAR";
           perms = "0700";
@@ -330,14 +330,14 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-a";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-a';systemctl try-reload-or-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-b";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-b';systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example'-b";
           contents = "FOO=BAR";
           perms = "0700";
         }
@@ -361,8 +361,8 @@ with
     {
       secretFiles = {
         defaultChangeAction = "reload";
-        files."example-a".template = "FOO=BAR";
-        files."example-b" = {
+        files."example\'-a".template = "FOO=BAR";
+        files."example'-b" = {
           changeAction = "restart";
           template = "FOO=BAR";
           perms = "0700";
@@ -384,14 +384,14 @@ with
       template_config.exit_on_retry_failure = true;
       template = [
         {
-          command = "chown : '${helpers.secretFilesRoot}example-a';systemctl try-reload-or-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-a";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-a';systemctl try-reload-or-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'-a";
           contents = "FOO=BAR";
           perms = "0400";
         }
         {
-          command = "chown : '${helpers.secretFilesRoot}example-b';systemctl try-restart 'example.service'";
-          destination = "${helpers.secretFilesRoot}example-b";
+          command = "chown : '${helpers.secretFilesRoot}example'\\''-b';systemctl try-restart 'example'\\''.service'";
+          destination = "${helpers.secretFilesRoot}example\'-b";
           contents = "FOO=BAR";
           perms = "0700";
         }

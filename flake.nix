@@ -61,6 +61,7 @@
                   tf.vault
                 ]))
                 cargo
+                rustfmt
                 foreman
                 jq
                 nixpkgs-fmt

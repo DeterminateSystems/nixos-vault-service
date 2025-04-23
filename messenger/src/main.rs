@@ -31,7 +31,7 @@ struct Cli {
 
     /// The verbosity level of the logging.
     #[clap(long, short, action = clap::ArgAction::Count)]
-    verbosity: usize,
+    verbosity: u8,
 }
 
 #[async_std::main]

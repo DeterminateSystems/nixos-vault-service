@@ -8,12 +8,17 @@ on:
 jobs:
   Terraform:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          determinate: true
       - name: Enable magic Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Terraform fmt
@@ -37,23 +42,33 @@ jobs:
 
   NixFormat:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
       - name: Check nixpkgs-fmt formatting
         run: .github/workflows/fmt.sh
 
   Shellcheck:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          determinate: true
       - name: Enable magic Nix cache
         uses: DeterminateSystems/magic-nix-cache-action@main
       - name: Shellcheck ./scripts/
@@ -61,23 +76,31 @@ jobs:
 
   NixTests:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
+        with:
+          determinate: true
       - name: Enable magic Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+        uses: DeterminateSystems/flakehub-cache-action@main
       - name: Evaluation cases of the definition
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.definition
       - name: Evaluation cases of the helpers
         run: nix-instantiate --strict --eval --json ./default.nix -A checks.helpers
-      # NOTE: we can't add the implementation tests to CI because of the lack of KVM:
-      #   error: a 'x86_64-linux' with features {kvm, nixos-test} is required to build '/nix/store/5cy5k2lgcfc9apjf3icj74l53bxxf8b0-vm-test-run-unnamed.drv', but I am a 'x86_64-linux' with features {benchmark, big-parallel, nixos-test}
+      - name: General nix flake check
+        run: nix flake check --keep-going -L
 
   EditorConfig:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -86,19 +109,29 @@ jobs:
 
   RustFmt:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
       - name: Check rustfmt
         working-directory: ./messenger
         run: nix develop --command cargo fmt -- --check
 
   RustBuild:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          determinate: true
+      - uses: DeterminateSystems/flakehub-cache-action@main
       - name: Build messenger
         run: nix build .#messenger -L

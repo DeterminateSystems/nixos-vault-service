@@ -1,0 +1,205 @@
+From f444d00916a005fa3c7db44ba59720c4cbaf9dd6 Mon Sep 17 00:00:00 2001
+From: Graham Christensen <graham@grahamc.com>
+Date: Wed, 15 Oct 2025 12:36:07 -0400
+Subject: [PATCH] auth: support cert auth using PIV
+
+---
+ api/client.go                              | 11 ++++
+ api/go.mod                                 |  2 +
+ api/go.sum                                 |  4 ++
+ api/piv.go                                 | 76 ++++++++++++++++++++++
+ command/agentproxyshared/auth/cert/cert.go | 15 ++++-
+ go.mod                                     |  2 +
+ go.sum                                     |  4 ++
+ 7 files changed, 113 insertions(+), 1 deletion(-)
+ create mode 100644 api/piv.go
+
+diff --git a/api/client.go b/api/client.go
+index 55f0fcfac8..fefb2a3603 100644
+--- a/api/client.go
++++ b/api/client.go
+@@ -313,6 +313,17 @@ func (c *Config) configureTLS(t *TLSConfig) error {
+ 	foundClientCert := false
+ 
+ 	switch {
++	case t.ClientCert == "piv/9a" && t.ClientKey != "":
++		var err error
++		clientCert, _, err = LoadPIVCertAndSigner(PIVConfig{
++			Slot:   "9a",
++			PIN:    t.ClientKey,
++		})
++
++		if err != nil {
++			return fmt.Errorf("PIV failure: %v", err)
++		}
++		foundClientCert = true
+ 	case t.ClientCert != "" && t.ClientKey != "":
+ 		var err error
+ 		clientCert, err = tls.LoadX509KeyPair(t.ClientCert, t.ClientKey)
+diff --git a/api/go.mod b/api/go.mod
+index 6a72cf6197..9cdea94080 100644
+--- a/api/go.mod
++++ b/api/go.mod
+@@ -12,6 +12,8 @@ toolchain go1.23.7
+ require (
+ 	github.com/cenkalti/backoff/v4 v4.3.0
+ 	github.com/go-jose/go-jose/v4 v4.1.1
++	github.com/go-piv/piv-go v1.11.0
++	github.com/go-piv/piv-go/v2 v2.4.0
+ 	github.com/go-test/deep v1.1.1
+ 	github.com/hashicorp/errwrap v1.1.0
+ 	github.com/hashicorp/go-cleanhttp v0.5.2
+diff --git a/api/go.sum b/api/go.sum
+index 46acd78d29..233eba2e30 100644
+--- a/api/go.sum
++++ b/api/go.sum
+@@ -8,6 +8,10 @@ github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
+ github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
+ github.com/go-jose/go-jose/v4 v4.1.1 h1:JYhSgy4mXXzAdF3nUx3ygx347LRXJRrpgyU3adRmkAI=
+ github.com/go-jose/go-jose/v4 v4.1.1/go.mod h1:BdsZGqgdO3b6tTc6LSE56wcDbMMLuPsw5d4ZD5f94kA=
++github.com/go-piv/piv-go v1.11.0 h1:5vAaCdRTFSIW4PeqMbnsDlUZ7odMYWnHBDGdmtU/Zhg=
++github.com/go-piv/piv-go v1.11.0/go.mod h1:NZ2zmjVkfFaL/CF8cVQ/pXdXtuj110zEKGdJM6fJZZM=
++github.com/go-piv/piv-go/v2 v2.4.0 h1:xamQ/fR4MJiw/Ndbk6yi7MVwhjrwlnDAPuaH9zcGb+I=
++github.com/go-piv/piv-go/v2 v2.4.0/go.mod h1:ShZi74nnrWNQEdWzRUd/3cSig3uNOcEZp+EWl0oewnI=
+ github.com/go-test/deep v1.1.1 h1:0r/53hagsehfO4bzD2Pgr/+RgHqhmf+k1Bpse2cTu1U=
+ github.com/go-test/deep v1.1.1/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
+ github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+diff --git a/api/piv.go b/api/piv.go
+new file mode 100644
+index 0000000000..711186ce36
+--- /dev/null
++++ b/api/piv.go
+@@ -0,0 +1,76 @@
++package api
++
++import (
++    "crypto/tls"
++    "errors"
++	"fmt"
++
++    "github.com/go-piv/piv-go/v2/piv"
++)
++
++type PIVConfig struct {
++	Reader   string
++	Slot     string
++	PIN      string
++	Intermediates [][]byte
++}
++
++func LoadPIVCertAndSigner(cfg PIVConfig) (tls.Certificate, *func() error, error) {
++	slot := piv.SlotAuthentication
++	switch cfg.Slot {
++	case "", "9a": slot = piv.SlotAuthentication
++	case "9c":     slot = piv.SlotSignature
++	case "9d":     slot = piv.SlotKeyManagement
++	case "9e":     slot = piv.SlotCardAuthentication
++	default:
++		return tls.Certificate{}, nil, fmt.Errorf("unsupported slot %q", cfg.Slot)
++	}
++
++	cards, err := piv.Cards()
++	if err != nil {
++		return tls.Certificate{}, nil, err
++	}
++
++	var yk *piv.YubiKey
++	for _, c := range cards {
++		if cfg.Reader == "" || containsFold(c, cfg.Reader) {
++			if yk, err = piv.Open(c); err == nil { break }
++		}
++	}
++	if yk == nil {
++		return tls.Certificate{}, nil, errors.New("no PIV reader found (or unable to open)")
++	}
++	close := yk.Close
++	// defer yk.Close() // Would be good, but not sure we can ...?
++
++	// Read the leaf certificate from the slot
++	leaf, err := yk.Certificate(slot)
++	if err != nil {
++		return tls.Certificate{}, &close, fmt.Errorf("reading slot %s cert: %w", cfg.Slot, err)
++	}
++
++	// Construct a private key based on the key
++	signer, err := yk.PrivateKey(slot, leaf.PublicKey, piv.KeyAuth{PIN: cfg.PIN})
++	if err != nil {
++		return tls.Certificate{}, &close, fmt.Errorf("getting signer for %s: %w", cfg.Slot, err)
++	}
++
++	// Construct the cert chain
++	chain := make([][]byte, 0, 1+len(cfg.Intermediates))
++	chain = append(chain, leaf.Raw)
++	chain = append(chain, cfg.Intermediates...)
++
++	return tls.Certificate{
++		Certificate: chain,
++		PrivateKey:  signer,
++		Leaf:        leaf,
++	}, &close, nil
++}
++
++func containsFold(s, sub string) bool {
++	return len(sub) == 0 || (len(s) >= len(sub) && (stringEqualFold(s, sub) || containsFold(s[1:], sub)))
++}
++func stringEqualFold(a, b string) bool {
++	return len(a) == len(b) &&
++		(a == b || (len(a) > 0 && (a[0]|32) == (b[0]|32) && stringEqualFold(a[1:], b[1:])))
++}
+diff --git a/command/agentproxyshared/auth/cert/cert.go b/command/agentproxyshared/auth/cert/cert.go
+index b9410c10b9..563f010157 100644
+--- a/command/agentproxyshared/auth/cert/cert.go
++++ b/command/agentproxyshared/auth/cert/cert.go
+@@ -224,7 +224,20 @@ func (c *certMethod) AuthClient(client *api.Client) (*api.Client, error) {
+ // 3. Any presented file in this bundle changed, the hash changes.
+ func (c *certMethod) hashCert(certFile, keyFile, caFile string) (string, error) {
+ 	var buf []byte
+-	if certFile != "" && keyFile != "" {
++	if certFile == "piv/9a" && keyFile != "" {
++		// I tried getting the certificate for hashing, but it failed caused failures accessing the PIV reader
++		// clientCert, closer, err := api.LoadPIVCertAndSigner(api.PIVConfig{
++		// 	Slot:   "9a",
++		// 	PIN:    keyFile,
++		// })
++		// if closer != nil {
++		// 	(*closer)()
++		// }
++		// if err != nil {
++		// 	return "", err
++		// }
++		// buf = bytes.Join(clientCert.Certificate, nil)
++	} else if certFile != "" && keyFile != "" {
+ 		certPEMBlock, err := os.ReadFile(certFile)
+ 		if err != nil {
+ 			return "", err
+diff --git a/go.mod b/go.mod
+index c46f0ecbbf..b637e15b16 100644
+--- a/go.mod
++++ b/go.mod
+@@ -243,6 +243,8 @@ require (
+ 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
+ 	github.com/containerd/errdefs v1.0.0 // indirect
+ 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
++	github.com/go-piv/piv-go v1.11.0 // indirect
++	github.com/go-piv/piv-go/v2 v2.4.0 // indirect
+ 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
+ 	github.com/klauspost/asmfmt v1.3.2 // indirect
+ 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
+diff --git a/go.sum b/go.sum
+index c27f8b9da1..d42adb361b 100644
+--- a/go.sum
++++ b/go.sum
+@@ -1155,6 +1155,10 @@ github.com/go-ozzo/ozzo-validation v3.6.0+incompatible h1:msy24VGS42fKO9K1vLz82/
+ github.com/go-ozzo/ozzo-validation v3.6.0+incompatible/go.mod h1:gsEKFIVnabGBt6mXmxK0MoFy+cZoTJY6mu5Ll3LVLBU=
+ github.com/go-pdf/fpdf v0.5.0/go.mod h1:HzcnA+A23uwogo0tp9yU+l3V+KXhiESpt1PMayhOh5M=
+ github.com/go-pdf/fpdf v0.6.0/go.mod h1:HzcnA+A23uwogo0tp9yU+l3V+KXhiESpt1PMayhOh5M=
++github.com/go-piv/piv-go v1.11.0 h1:5vAaCdRTFSIW4PeqMbnsDlUZ7odMYWnHBDGdmtU/Zhg=
++github.com/go-piv/piv-go v1.11.0/go.mod h1:NZ2zmjVkfFaL/CF8cVQ/pXdXtuj110zEKGdJM6fJZZM=
++github.com/go-piv/piv-go/v2 v2.4.0 h1:xamQ/fR4MJiw/Ndbk6yi7MVwhjrwlnDAPuaH9zcGb+I=
++github.com/go-piv/piv-go/v2 v2.4.0/go.mod h1:ShZi74nnrWNQEdWzRUd/3cSig3uNOcEZp+EWl0oewnI=
+ github.com/go-sql-driver/mysql v1.5.0/go.mod h1:DCzpHaOWr8IXmIStZouvnhqoel9Qv2LBy8hT2VhHyBg=
+ github.com/go-sql-driver/mysql v1.9.3 h1:U/N249h2WzJ3Ukj8SowVFjdtZKfu9vlLZxjPXV1aweo=
+ github.com/go-sql-driver/mysql v1.9.3/go.mod h1:qn46aNg1333BRMNU69Lq93t8du/dwxI64Gl8i5p1WMU=
+-- 
+2.50.1
+

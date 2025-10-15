@@ -49,6 +49,9 @@
 
       overlays.default = final: prev: {
         detsys-messenger = self.packages.${final.stdenv.system}.messenger;
+        vault = prev.vault.overrideAttrs ({ patches ? [], ... }: {
+          patches = patches ++ [ ./0001-auth-support-cert-auth-using-PIV.patch ];
+        });
       };
 
       devShells = forAllSystems

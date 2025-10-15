@@ -45,13 +45,16 @@
           messenger = pkgs.callPackage ./messenger { };
 
           default = messenger;
+
+          vault = pkgs.vault.overrideAttrs ({ patches ? [ ], ... }: {
+            patches = patches ++ [ ./0001-auth-support-cert-auth-using-PIV.patch ];
+            vendorHash = "sha256-A5YJPZyREVJqlVJvM3QWlgTs1pD7J9Q1H+5mi6bCvXw=";
+          });
         });
 
       overlays.default = final: prev: {
         detsys-messenger = self.packages.${final.stdenv.system}.messenger;
-        vault = prev.vault.overrideAttrs ({ patches ? [], ... }: {
-          patches = patches ++ [ ./0001-auth-support-cert-auth-using-PIV.patch ];
-        });
+        vault = self.packages.${final.stdenv.system}.vault;
       };
 
       devShells = forAllSystems

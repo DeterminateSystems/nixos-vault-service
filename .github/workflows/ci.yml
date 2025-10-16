@@ -34,6 +34,7 @@ jobs:
         if: success() || failure()
         run: nix develop -c terraform fmt -check -recursive ./terraform
       - name: Terraform init
+        if: success() || failure()
         run: |
           for dir in $(find terraform -type d); do
             echo "initializing dir $dir"

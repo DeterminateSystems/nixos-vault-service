@@ -45,10 +45,25 @@
           messenger = pkgs.callPackage ./messenger { };
 
           default = messenger;
+
+          vault = pkgs.vault.overrideAttrs ({ patches ? [ ], buildInputs ? [ ], nativeBuildInputs ? [ ], ... }: {
+            patches = patches ++ [ ./0001-auth-support-cert-auth-using-PIV.patch ];
+            vendorHash = "sha256-A5YJPZyREVJqlVJvM3QWlgTs1pD7J9Q1H+5mi6bCvXw=";
+
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+            ] ++ nativeBuildInputs;
+
+            buildInputs = with pkgs; [
+              pcsclite
+              pcsclite.dev
+            ] ++ buildInputs;
+          });
         });
 
       overlays.default = final: prev: {
         detsys-messenger = self.packages.${final.stdenv.system}.messenger;
+        vault = self.packages.${final.stdenv.system}.vault;
       };
 
       devShells = forAllSystems
